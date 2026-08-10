@@ -21,12 +21,8 @@ import studio.akuro.simulacra.content.ModTooltips;
 import studio.akuro.simulacra.index.ModBlockEntities;
 
 /**
- * The Neural Node: a kinetic consumer that turns rotation into a compute rate.
- *
- * <p>It accepts a shaft on the face opposite its horizontal facing (one axis in, like a Millstone or
- * the Mechanical Press's input). Faster rotation means more compute. For now the compute it produces
- * is only displayed on the goggle tooltip; wiring it into a shared Cognition Array pool comes with the
- * Mainframe Controller.
+ * A kinetic consumer that turns rotation into a compute rate. It takes a shaft on the face opposite
+ * its horizontal facing, one axis in, like a Millstone. Faster rotation means more compute.
  */
 public class NeuralNodeBlock extends HorizontalKineticBlock implements IBE<NeuralNodeBlockEntity> {
 
@@ -46,8 +42,7 @@ public class NeuralNodeBlock extends HorizontalKineticBlock implements IBE<Neura
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Front (drive display) faces the player; the shaft input faces away, which is what players
-        // expect when placing a machine. Sneak to flip.
+        // Front faces the player, shaft input faces away. Sneak to flip.
         Direction facing = context.getHorizontalDirection().getOpposite();
         if (context.getPlayer() != null && context.getPlayer().isShiftKeyDown()) {
             facing = facing.getOpposite();

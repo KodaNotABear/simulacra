@@ -15,15 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Display Link sources, so a Create player can wire a machine to a Display Board or Nixie Tubes.
- *
- * <p>This is the piece Hostile Neural Networks cannot have and we can. Reading a farm's state from
- * across the base, on a sign made of blocks, is how Create players actually build control rooms —
- * and it is the difference between an add-on and a port. Both machines already know everything worth
- * showing; they were just keeping it to their own screens.
- *
- * <p>Sources are trimmed to the target's row count, so the same link reads sensibly on a single
- * Nixie tube row and on a full board.
+ * Display Link sources, so a machine can be wired to a Display Board or Nixie Tubes. Readings are
+ * trimmed to the target's row count, so the same link works on one Nixie row and on a full board.
  */
 public class SimulacraDisplaySources {
 
@@ -87,12 +80,8 @@ public class SimulacraDisplaySources {
     }
 
     /**
-     * Cuts a reading down to what the target can actually show.
-     *
-     * <p>A Nixie tube row is one line and a Display Board can be many, and a source that hands back
-     * more than fits is simply truncated by the target — losing the progress figure, which is the
-     * line most worth having. Ordering matters more than completeness here, so the list is written
-     * most-important-first and cut from the end.
+     * Cuts a reading down to what the target can show. The target truncates anything longer itself,
+     * so the lists above are written most-important-first and cut from the end.
      */
     private static List<MutableComponent> trim(List<MutableComponent> lines, DisplayTargetStats stats) {
         int rows = Math.max(1, stats.maxRows());

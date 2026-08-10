@@ -31,23 +31,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Draws a Data Matrix as its brass frame with the bound mob standing inside it.
+ * Draws a Data Matrix as its brass frame with the bound mob standing inside it, so matrices bound to
+ * different mobs are not six copies of the same icon.
  *
- * <p>A matrix's whole identity is its Subject, and a flat icon cannot show it: a chest of matrices
- * bound to six different mobs looks like six copies of the same item.
- *
- * <p>The transform sequence here is Hostile Neural Networks' {@code DataModelItemStackRenderer},
- * followed deliberately closely rather than re-derived. Two things in it are worth calling out
- * because they are not obvious and are what earlier attempts here got wrong:
- *
- * <ul>
- *   <li>Both the frame and the mob are drawn into a <em>private</em> buffer source that is flushed
- *       immediately, never into the shared buffer handed to us. Queueing an entity into the GUI's
- *       batch leaves it to be painted whenever that batch happens to flush, which is somewhere else
- *       entirely on screen.
- *   <li>The mob is anchored at the bottom of the item and scaled from there, not centred. That is
- *       what makes a chicken and an iron golem both look deliberate in a 16-pixel icon.
- * </ul>
+ * <p>Transform sequence copied from Hostile Neural Networks' {@code DataModelItemStackRenderer}. Two
+ * non-obvious parts: everything is drawn into a private buffer source flushed immediately (see
+ * {@link #GHOST_BUFFER}), and the mob is anchored at the bottom of the item and scaled from there
+ * rather than centred, which is what makes a chicken and an iron golem both fit a 16-pixel icon.
  */
 public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -59,22 +49,16 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float ICON_FIT = 0.82f;
 
     /**
-     * A buffer source of our own, drained the moment anything is drawn into it.
-     *
-     * <p>This is the single most important detail borrowed from Hostile Neural Networks. The buffer
-     * passed to a BEWLR in a GUI is the screen's shared batch, and geometry put there is drawn when
-     * that batch flushes rather than now — which for an entity means it lands over unrelated parts of
-     * the screen. Drawing into a private immediate buffer sidesteps the whole ordering question.
+     * Our own buffer source, drained the moment anything is drawn into it. The buffer passed to a
+     * BEWLR in a GUI is the screen's shared batch, and an entity queued there is drawn whenever that
+     * batch flushes, landing over unrelated parts of the screen.
      */
     private static final MultiBufferSource.BufferSource GHOST_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(256));
 
     /**
-     * One live entity per species, reused across frames.
-     *
-     * <p>Entity construction is not cheap and this runs for every matrix on screen every frame, so
-     * building one per frame would be visible in the frame time of a full inventory. Keyed by type,
-     * not by stack: two matrices bound to zombies can share one zombie.
+     * One live entity per species, reused across frames. Entity construction is not cheap and this
+     * runs per matrix per frame. Keyed by type, not by stack: two zombie matrices share one zombie.
      */
     private static final Map<EntityType<?>, Entity> CACHE = new HashMap<>();
 
@@ -88,8 +72,7 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
     /** Dropped by a resource reload, since entity renderers and models are rebuilt underneath us. */
     public static void clearCache() {
         CACHE.clear();
-        // A reload rebuilds every entity renderer, so a species that failed against the old ones
-        // deserves another chance against the new.
+        // A reload rebuilds every entity renderer, so a species that failed gets another chance.
         REFUSED.clear();
     }
 
@@ -98,10 +81,9 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
                              MultiBufferSource buffer, int light, int overlay) {
         pose.pushPose();
         if (context == ItemDisplayContext.GUI) {
-            // Shrink the whole composition about the item's centre rather than the mob alone. HNN's
-            // numbers fill their icon edge to edge, which is right for their sprite and leaves ours
-            // touching the sides of an inventory slot; scaling platform and subject together keeps
-            // their proportions and only gives back the margin.
+            // Shrink the whole composition about the item's centre, not the mob alone: HNN's numbers
+            // fill the icon edge to edge, and this gives back the slot margin without changing the
+            // proportions between platform and subject.
             pose.translate(0.5f, 0.5f, 0.5f);
             pose.scale(ICON_FIT, ICON_FIT, ICON_FIT);
             pose.translate(-0.5f, -0.5f, -0.5f);
@@ -116,9 +98,9 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
         try {
             renderSubject(subject, context, pose, light);
         } catch (Throwable failure) {
-            // A matrix can be bound to any mob in the pack, including ones whose renderer assumes a
-            // real entity in a real world. One misbehaving mob must not take down the inventory
-            // screen, so drop that species permanently and carry on with the frame alone.
+            // A matrix can bind to any mob in the pack, including ones whose renderer assumes a real
+            // entity in a real world. Drop that species for the session rather than let it take the
+            // inventory screen down with it.
             EntityType<?> type = subject.getType();
             REFUSED.add(type);
             CACHE.remove(type);
@@ -129,19 +111,16 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * Lays the frame down as the platform the subject stands on.
+     * Lays the frame down as the platform the subject stands on. The frame sprite is a flat square
+     * tile; tipping it back 75 degrees and spinning it 45 makes a diamond platform seen from above.
      *
-     * <p>This is the part that makes the item read as a specimen on a plinth rather than a mob glued
-     * to a card. The frame sprite is a flat square tile; tipping it back 75 degrees and spinning it 45
-     * turns it into a diamond platform seen from above, and the mob is then placed standing on it.
-     *
-     * <p>Every number here is Hostile Neural Networks', and they only work because the item model
-     * carries no display transforms — the item is positioned by hand for each context instead. Drawn
-     * with {@code renderModelLists} rather than {@code ItemRenderer.render} for the same reason: that
-     * method would apply a display transform and a recentre of its own on top of these.
+     * <p>These numbers are Hostile Neural Networks' and only work because the item model carries no
+     * display transforms: the item is positioned by hand per context. Same reason for using
+     * {@code renderModelLists} over {@code ItemRenderer.render}, which would apply a display transform
+     * and a recentre of its own on top.
      */
     // ItemBlockRenderTypes.getRenderType is deprecated in favour of asking the baked model, but it is
-    // what Hostile Neural Networks calls here and it is correct for a single-pass generated sprite.
+    // what HNN calls here and it is correct for a single-pass generated sprite.
     @SuppressWarnings("deprecation")
     private static void renderFrame(ItemStack stack, ItemDisplayContext context, PoseStack pose,
                                     int light, int overlay) {
@@ -209,8 +188,8 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
         return cached;
     }
 
-    // RenderSystem.runAsFancy is deprecated but is what both vanilla's in-inventory entity render and
-    // Hostile Neural Networks' call, and it is what keeps translucent mob parts right under fabulous.
+    // RenderSystem.runAsFancy is deprecated but is what vanilla's in-inventory entity render calls,
+    // and it is what keeps translucent mob parts right under fabulous.
     @SuppressWarnings("deprecation")
     private void renderSubject(Entity subject, ItemDisplayContext context, PoseStack pose, int light) {
         Minecraft mc = Minecraft.getInstance();
@@ -235,15 +214,13 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
             pose.scale(scale, scale, scale);
             pose.translate(0f, 0.45f, 0f);
         } else {
-            // Held and dropped copies float, and bob, so the matrix reads as containing something
-            // alive rather than printed.
+            // Held and dropped copies float and bob, so the subject reads as alive rather than printed.
             scale *= 0.25f;
             pose.scale(scale, scale, scale);
             pose.translate(0f, 0.12f + 0.05f * (float) Math.sin((subject.tickCount + partial) / 12.0), 0f);
         }
 
-        // Turned slightly off-axis so the subject has depth; mirrored for the left hand, and spun to
-        // face out of the wall when framed.
+        // Turned off-axis for depth; mirrored for the left hand, spun to face out of the wall when framed.
         float yaw = -30f;
         if (context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
                 || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND) {
@@ -273,14 +250,9 @@ public class DataMatrixRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * How much to resize a species before the per-context scaling above.
-     *
-     * <p>Hostile Neural Networks ships an explicit scale per data model and leaves it at 1 for almost
-     * everything — a chicken and an iron golem both look right untouched, and only genuine outliers
-     * like a ghast or the dragon carry an override. We cannot ship a table, because a matrix binds to
-     * whatever mob a pack happens to contain, so this reproduces the default and shrinks only what
-     * would not otherwise fit. Nothing is ever enlarged: that is where their table disagrees with a
-     * formula, and small mobs looking small is the better failure.
+     * How much to resize a species before the per-context scaling above. A matrix binds to whatever
+     * mob a pack contains, so there is no per-model table to ship: leave everything at 1 like HNN's
+     * defaults and shrink only the outliers that would not fit. Nothing is ever enlarged.
      */
     private static float fitScale(EntityType<?> type) {
         float largest = Math.max(type.getWidth(), type.getHeight());

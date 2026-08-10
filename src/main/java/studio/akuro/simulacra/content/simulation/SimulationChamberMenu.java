@@ -17,16 +17,9 @@ import studio.akuro.simulacra.index.ModMenus;
 /**
  * Screen contents for the Simulation Chamber.
  *
- * <p>The chamber holds more state than any other machine in the mod — a bound subject, a grade, a
- * data count, training progress, a substrate tier and a reason it might be stalled — and until now
- * all of that arrived as a chat message on right-click. This puts it on a screen, the way Hostile
- * Neural Networks' equivalent machine does — though theirs is a readout with no mob render on it at
- * all, and the large subject render belongs to their Deep Learner instead.
- *
  * <p>The bound matrix rides along as an inactive ghost slot. Inactive slots are skipped for drawing
- * and hit-testing but still ride the menu's own item syncing, so the client gets a live copy of the
- * matrix — and therefore its subject, grade and data count — without a custom packet, and the screen
- * is free to draw it large in the viewport instead of as a 16-pixel icon.
+ * and hit-testing but still ride the menu's item syncing, so the client gets a live copy of the
+ * matrix (and therefore its subject, grade and data count) with no custom packet.
  */
 public class SimulationChamberMenu extends AbstractContainerMenu {
 
@@ -141,8 +134,8 @@ public class SimulationChamberMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Steps the redstone mode. Runs server-side through vanilla's own button plumbing, so no custom
-     * packet is needed and the client cannot set the mode on its own.
+     * Steps the redstone mode through vanilla's button plumbing: no custom packet, and the client
+     * cannot set the mode itself.
      */
     @Override
     public boolean clickMenuButton(Player player, int id) {

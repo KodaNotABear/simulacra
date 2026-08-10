@@ -3,12 +3,11 @@ package studio.akuro.simulacra;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * End-user tuning for Simulacra, exposed as a NeoForge config spec ({@code simulacra-common.toml}).
+ * End-user tuning, exposed as a NeoForge config spec ({@code simulacra-common.toml}).
  *
- * <p>Design rule going forward: any number that affects balance lives here, never as a bare constant in
- * game logic, so packs and players can retune the mod without editing code. Values are read live via
- * {@code .get()} at the point of use; this is a COMMON config so it loads early enough for stress
- * registration at common setup. When adding a new machine, add its knobs to this file first.
+ * <p>Any number that affects balance lives here rather than as a constant in game logic. Values are
+ * read live via {@code .get()} at the point of use. COMMON, so it loads early enough for stress
+ * registration at common setup.
  */
 public final class SimulacraConfig {
     private SimulacraConfig() {}

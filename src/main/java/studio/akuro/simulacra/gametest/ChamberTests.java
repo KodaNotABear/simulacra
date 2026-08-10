@@ -19,13 +19,9 @@ import studio.akuro.simulacra.index.ModItems;
 /**
  * Server-side tests for the Simulation Chamber, run headlessly by {@code gradlew runGameTestServer}.
  *
- * <p>These target the rules that are cheap to break and expensive to notice: when the chamber refuses
- * to run, and how much compute it asks the array for. Both are invisible from outside — a chamber that
- * quietly draws its full allowance against a job it can never finish looks exactly like a working one
- * until the whole array is starved.
- *
- * <p>Rendering is deliberately out of scope. A GameTest can prove the chamber reports OUTPUT_FULL; it
- * cannot prove the panel looks right.
+ * <p>They cover when the chamber refuses to run and how much compute it asks for. Both are invisible
+ * from outside: a chamber drawing its full allowance against a job it can never finish looks like a
+ * working one until the array is starved. Rendering is out of scope.
  */
 @GameTestHolder(Simulacra.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -46,8 +42,8 @@ public class ChamberTests {
 
     /**
      * Builds a matrix in the state training would have left it in. Written through the component keys
-     * rather than the item's own binding path, because that path needs a player holding the matrix in
-     * their offhand while something dies — far more machinery than the thing under test.
+     * rather than the item's binding path, which needs a player holding it in the offhand while
+     * something dies.
      */
     private static ItemStack trainedMatrix(String mobId) {
         ItemStack stack = new ItemStack(ModItems.BLANK_DATA_MATRIX.get());
@@ -65,8 +61,7 @@ public class ChamberTests {
         if (actual != expected) {
             throw new GameTestAssertException("expected stall reason " + expected + " but got " + actual);
         }
-        // A stalled chamber must also stop asking for compute, or it starves its neighbours on the
-        // array while producing nothing.
+        // A stalled chamber must stop asking for compute, or it starves the rest of the array.
         if (chamber.getComputeDemand() != 0f) {
             throw new GameTestAssertException(
                     "chamber stalled on " + expected + " but still demands "
@@ -93,8 +88,8 @@ public class ChamberTests {
     }
 
     /**
-     * A model whose mob no longer exists (its mod was uninstalled) can never print anything. It has to
-     * be reported rather than silently drawing compute against a job that must always fail.
+     * A model whose mob no longer exists can never print anything, so it must report rather than draw
+     * compute against a job that must always fail.
      */
     @GameTest(template = PLATFORM)
     public static void vanishedSubjectStalls(GameTestHelper helper) {
@@ -116,8 +111,8 @@ public class ChamberTests {
     }
 
     /**
-     * Substrate has to come back out by hand. The capability face deliberately refuses to give it to
-     * automation, which once left breaking the block as the only way to change tiers.
+     * Substrate has to come back out by hand: the capability face refuses to give it to automation,
+     * which once left breaking the block as the only way to change tiers.
      */
     @GameTest(template = PLATFORM)
     public static void substrateComesBackOut(GameTestHelper helper) {
@@ -138,10 +133,9 @@ public class ChamberTests {
     }
 
     /**
-     * The array is the game: a harder subject on finer substrate must cost proportionally more per
-     * tick, so the size of an array decides what it can simulate rather than only how many chambers it
-     * can feed. If these ever collapse to the same number, that whole design has quietly stopped
-     * working, and nothing else would report it.
+     * A harder subject on finer substrate must cost more per tick, so array size decides what can be
+     * simulated and not just how many chambers can be fed. Nothing else reports it if these two
+     * collapse to the same number.
      */
     @GameTest(template = PLATFORM)
     public static void harderJobsDemandMoreCompute(GameTestHelper helper) {

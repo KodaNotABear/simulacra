@@ -16,12 +16,9 @@ import studio.akuro.simulacra.index.ModBlocks;
 import java.util.List;
 
 /**
- * Every machine has to be harvestable by the tool a player would reach for.
- *
- * <p>A block that calls {@code requiresCorrectToolForDrops()} but appears in no {@code mineable/*} tag
- * has no correct tool at all: nothing satisfies the check, so it silently drops nothing however it is
- * mined. That is invisible in a build, invisible in a log, and only shows up as a player losing a
- * machine — which makes it exactly the sort of thing worth pinning down in a test.
+ * Every machine has to be harvestable by the tool a player would reach for. A block that calls
+ * {@code requiresCorrectToolForDrops()} but appears in no {@code mineable/*} tag has no correct tool
+ * at all, so it silently drops nothing however it is mined. Nothing in a build or a log reports it.
  */
 @GameTestHolder(Simulacra.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -40,9 +37,8 @@ public class HarvestTests {
     }
 
     /**
-     * Create's own casings sit in both mineable/pickaxe and mineable/axe, so a player carrying either
-     * can take a machine down. Matching that is what stops these blocks feeling foreign in a Create
-     * base — and with requiresCorrectToolForDrops set, being in neither tag means no tool works at all.
+     * Create's casings sit in both mineable/pickaxe and mineable/axe, so either tool takes a machine
+     * down. With requiresCorrectToolForDrops set, being in neither tag means no tool works at all.
      */
     @GameTest(template = PLATFORM, timeoutTicks = 100)
     public static void everyMachineIsHarvestableByPickaxeAndAxe(GameTestHelper helper) {
@@ -66,10 +62,7 @@ public class HarvestTests {
         helper.succeed();
     }
 
-    /**
-     * Every machine must take a wrench, the way every Create machine does: rotate with it, and
-     * sneak-click to pick the block back up rather than mining it.
-     */
+    /** Every machine must take a wrench: rotate with it, sneak-click to pick the block back up. */
     @GameTest(template = PLATFORM, timeoutTicks = 100)
     public static void everyMachineIsWrenchable(GameTestHelper helper) {
         StringBuilder missing = new StringBuilder();

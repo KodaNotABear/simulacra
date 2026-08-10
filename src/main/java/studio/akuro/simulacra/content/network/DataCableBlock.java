@@ -29,12 +29,10 @@ import studio.akuro.simulacra.content.simulation.SimulationChamberBlock;
 import java.util.Map;
 
 /**
- * A passive conductor in the compute network, shaped and behaving like a thin pipe: a small central
- * core that grows an arm toward each neighbour it connects to (other cables, the Controller, or a
- * Neural Node). Connection state drives both the model (multipart) and the collision shape.
- *
- * <p>The Mainframe Controller still flood-fills through {@code DataCableBlock}s; the connection
- * properties here are purely about appearance/shape and use the same adjacency rule.
+ * A passive conductor in the compute network, shaped like a thin pipe: a central core that grows an
+ * arm toward each neighbour it connects to. Connection state drives the multipart model and the
+ * collision shape only; the Mainframe Controller's flood-fill uses the same adjacency rule
+ * independently.
  */
 public class DataCableBlock extends Block implements IWrenchable {
     public static final MapCodec<DataCableBlock> CODEC = simpleCodec(DataCableBlock::new);

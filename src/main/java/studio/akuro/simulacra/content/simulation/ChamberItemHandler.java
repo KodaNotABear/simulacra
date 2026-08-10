@@ -4,10 +4,9 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * The single item-handler face the Simulation Chamber shows to neighbours. It stitches the substrate
- * input in front of the loot output: outside automation can push substrate into the input slots and
- * pull finished loot from the output slots, but never the reverse. The chamber writes to the backing
- * handlers directly.
+ * The single item-handler face the Simulation Chamber shows to neighbours: substrate input slots in
+ * front of the loot output slots. Automation can push substrate in and pull loot out, never the
+ * reverse. The chamber writes to the backing handlers directly.
  */
 public class ChamberItemHandler implements IItemHandler {
     private final IItemHandler input;
@@ -32,15 +31,11 @@ public class ChamberItemHandler implements IItemHandler {
     }
 
     /**
-     * Input slots report empty to this face, deliberately.
-     *
-     * <p>Extractors survey a handler with {@code getStackInSlot} and then pull from whatever slot
-     * looked promising. An input slot that shows a Prediction but refuses every extraction is a slot
-     * they can get stuck on forever - Create's own ItemHelper.extract works exactly this way, so an
-     * outbound funnel would drain the output until the moment something sat in the input, then stop
-     * for good. Hiding the contents costs nothing here: insertion goes through insertItem and
-     * isItemValid, which still see the real stack, and the screen reads the handler directly rather
-     * than through this face.
+     * Input slots report empty on purpose. Extractors survey with {@code getStackInSlot} and then
+     * pull from whatever looked promising, so a slot that shows an item but refuses every extraction
+     * jams them for good - Create's ItemHelper.extract does exactly this, and an outbound funnel
+     * would stop the moment anything sat in the input. Insertion still sees the real stack through
+     * insertItem and isItemValid, and the screen reads the backing handler rather than this face.
      */
     @Override
     public ItemStack getStackInSlot(int slot) {

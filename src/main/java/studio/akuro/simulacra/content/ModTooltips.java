@@ -9,14 +9,9 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import java.util.List;
 
 /**
- * Item and block tooltips, following Create's convention.
- *
- * <p>Create hides a block's description behind Shift and shows a "Hold [Shift]" prompt instead, so an
- * inventory full of machines is readable at a glance and the detail is there when wanted. Printing the
- * summary unconditionally, which is what this mod used to do, makes every stack shout its manual.
- *
- * <p>The summary is word-wrapped through Create's own helper so line breaks land where they do on
- * Create's tooltips rather than wherever the translation happens to end.
+ * Item and block tooltips, following Create's convention: the description sits behind Shift with a
+ * "Hold [Shift]" prompt instead. Word-wrapped through Create's own helper so line breaks land where
+ * they do on Create's tooltips.
  */
 public final class ModTooltips {
     private ModTooltips() {}
@@ -36,11 +31,9 @@ public final class ModTooltips {
     }
 
     /**
-     * Whether Shift is held, without dragging a client-only class onto a dedicated server.
-     *
-     * <p>{@code appendHoverText} lives in common code but is only ever rendered client-side. The dist
-     * check short-circuits before {@code Screen} is touched, so the class is never resolved on a
-     * server even if something asks an item for its tooltip there.
+     * Whether Shift is held, without dragging a client-only class onto a dedicated server. The dist
+     * check short-circuits before {@code Screen} is touched, so it is never resolved server-side even
+     * if something asks an item for its tooltip there.
      */
     private static boolean shiftDown() {
         return FMLEnvironment.dist == Dist.CLIENT && ClientOnly.shiftDown();

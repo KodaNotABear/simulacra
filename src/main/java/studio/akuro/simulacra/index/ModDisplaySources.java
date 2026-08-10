@@ -9,11 +9,9 @@ import studio.akuro.simulacra.Simulacra;
 import studio.akuro.simulacra.compat.SimulacraDisplaySources;
 
 /**
- * Display Link sources for the two machines worth watching from across a base.
- *
- * <p>Registration is in two halves. The sources themselves go into Create's own registry, and then
- * each is associated with a block through {@link DisplaySource#BY_BLOCK} — a plain runtime map, not
- * a registry, so it has to be filled after the blocks exist rather than during registration.
+ * Display Link sources, registered in two halves: the sources go into Create's registry, then each is
+ * bound to a block through {@link DisplaySource#BY_BLOCK}, a plain runtime map that has to be filled
+ * after the blocks exist.
  */
 public class ModDisplaySources {
 

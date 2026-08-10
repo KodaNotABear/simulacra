@@ -11,10 +11,7 @@ import studio.akuro.simulacra.client.ponder.SimulacraPonderPlugin;
 import studio.akuro.simulacra.content.neuralnode.NeuralNodeRenderer;
 import studio.akuro.simulacra.index.ModBlockEntities;
 
-/**
- * Client-only setup. Annotated for {@link Dist#CLIENT} so it is never classloaded on a dedicated
- * server, which keeps the client-only renderer reference safe.
- */
+/** Client-only setup. {@link Dist#CLIENT} keeps it from being classloaded on a dedicated server. */
 @EventBusSubscriber(modid = Simulacra.MOD_ID, value = Dist.CLIENT)
 public class SimulacraClient {
 
@@ -25,28 +22,22 @@ public class SimulacraClient {
                 studio.akuro.simulacra.content.fabricator.LootFabricatorRenderer::new);
     }
 
-    /**
-     * Ponder collects registered plugins on client setup and builds its index on load complete, so
-     * registering here is early enough for the scenes to appear.
-     */
+    /** Ponder builds its index on load complete, so client setup is early enough to register. */
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         PonderIndex.addPlugin(new SimulacraPonderPlugin());
     }
 
     /**
-     * The frame the Data Matrix renderer draws behind its mob. It belongs to no blockstate and no
-     * item model chain, so nothing would bake it unless it is asked for explicitly.
+     * The frame the Data Matrix renderer draws behind its mob. It belongs to no blockstate or item
+     * model chain, so nothing bakes it unless it is asked for explicitly.
      */
     @SubscribeEvent
     static void onRegisterAdditionalModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
         event.register(DataMatrixRenderer.FRAME);
     }
 
-    /**
-     * Hands Data Matrix rendering to {@link DataMatrixRenderer}, so the item can show which mob it is
-     * bound to instead of every matrix looking identical.
-     */
+    /** Hands Data Matrix rendering to {@link DataMatrixRenderer} so it can show its bound mob. */
     @SubscribeEvent
     static void onRegisterClientExtensions(
             net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {

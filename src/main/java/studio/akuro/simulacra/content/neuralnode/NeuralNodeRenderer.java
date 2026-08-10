@@ -14,11 +14,10 @@ import net.minecraft.core.Direction;
 
 /**
  * Renders the Neural Node's input shaft as a rotating half-shaft on its back face, the Create
- * convention so players can see where stress goes in and that the machine is spinning.
+ * convention. The casing is the static block model; this only adds the moving shaft.
  *
- * <p>The casing is the static block model; this renderer only adds the moving shaft. We do not bail
- * out when Flywheel visualization is active (as Create's own renderers do) because we provide no
- * Flywheel visual — the block-entity renderer is the only path, so it must always run.
+ * <p>Unlike Create's own renderers this does not bail out when Flywheel visualization is active,
+ * because there is no Flywheel visual to fall back on.
  */
 public class NeuralNodeRenderer extends KineticBlockEntityRenderer<NeuralNodeBlockEntity> {
 

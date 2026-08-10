@@ -25,14 +25,13 @@ import studio.akuro.simulacra.index.ModItems;
  * Storyboards for the four machines. Each scene stages on the structure of the same name under
  * {@code assets/simulacra/ponder/}.
  *
- * <p>Two rules these methods must respect. {@code title(...)} runs first, because it sets the scene
- * id every lang key is derived from. And nothing here may touch the level: Ponder replays each
- * storyboard against a null world during lang collection purely to harvest text keys, so the
- * programs have to be pure instruction-building.
+ * <p>{@code title(...)} must run first: it sets the scene id every lang key derives from. Nothing
+ * here may touch the level either, since Ponder replays each storyboard against a null world during
+ * lang collection to harvest text keys.
  *
- * <p>The count and order of {@code showText} calls is load-bearing. Keys are numbered {@code text_1},
- * {@code text_2}, ... in execution order, so adding a line in the middle renumbers everything after
- * it, and the matching keys in {@code en_us.json} must move with it.
+ * <p>The count and order of {@code showText} calls is load-bearing: keys are numbered {@code text_1},
+ * {@code text_2}, ... in execution order, so inserting a line renumbers every key after it in
+ * {@code en_us.json}.
  */
 public class SimulacraScenes {
 
@@ -64,8 +63,8 @@ public class SimulacraScenes {
         scene.idle(20);
 
         scene.world().setKineticSpeed(util.select().everywhere(), 32);
-        // NeuralNodeBlockEntity only drives the LIT property server-side, and a Ponder scene runs in
-        // a client level, so the front would stay dark here. Light it to match the rotation.
+        // LIT is only driven server-side and a Ponder scene runs in a client level, so the front
+        // would stay dark. Light it to match the rotation.
         scene.world().modifyBlocks(util.select().position(node),
                 state -> state.setValue(NeuralNodeBlock.LIT, true), false);
         scene.effects().rotationSpeedIndicator(shaft);
@@ -149,9 +148,8 @@ public class SimulacraScenes {
     }
 
     /**
-     * The step nothing else teaches: binding a matrix by killing mobs with it in the offhand.
-     * Staged on {@code ponder/data_matrix.nbt}, which is a bare plate - the whole scene is the
-     * player, the item and one very unlucky zombie.
+     * Binding a matrix by killing mobs with it in the offhand. Staged on
+     * {@code ponder/data_matrix.nbt}, a bare plate holding only the player, the item and a zombie.
      */
     public static void dataMatrix(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
@@ -419,16 +417,15 @@ public class SimulacraScenes {
         scene.idle(15);
 
         // Belt travel is Direction.fromAxisAndDirection(axis, speed < 0 ^ axis == X), so the sign
-        // means opposite things on the two belts. The intake runs along Z and needs a negative
-        // speed to carry blanks north into the chamber; the output runs along X, where the same
-        // negative speed would drive drops back into the chamber, so it keeps the positive speed
-        // set above and carries them west and away.
+        // means opposite things on the two belts. The intake runs along Z and needs a negative speed
+        // to carry blanks north into the chamber; the output runs along X, where negative would drive
+        // drops back in, so it keeps the positive speed set above and carries them west.
         scene.world().setKineticSpeed(util.select().fromTo(3, 1, 6, 5, 1, 8), -32);
 
         scene.world().showSection(intakeLine, Direction.NORTH);
         scene.idle(15);
-        // Insertion is refused outright when the side argument equals the belt's direction of
-        // travel, so items have to be handed in from behind: south onto a northbound belt.
+        // Insertion is refused when the side argument equals the belt's direction of travel, so
+        // items are handed in from behind: south onto a northbound belt.
         scene.world().createItemOnBelt(intakeBelt, Direction.SOUTH,
                 new ItemStack(ModItems.CRUDE_IMPRINT_BLANK.get()));
         scene.overlay().showText(80)
@@ -448,8 +445,8 @@ public class SimulacraScenes {
         scene.idle(15);
         scene.effects().indicateSuccess(chamber);
         scene.world().flapFunnel(outputFunnel, true);
-        // The chamber prints Predictions, not drops. Showing loot here taught the pre-Fabricator
-        // loop and left players expecting iron to come out of this machine.
+        // The chamber prints Predictions, not drops. Showing loot here left players expecting iron
+        // to come out of this machine.
         for (int i = 0; i < 4; i++) {
             scene.world().createItemOnBelt(outputBelt, Direction.EAST, prediction("minecraft:zombie"));
             scene.idle(12);
@@ -474,13 +471,12 @@ public class SimulacraScenes {
 
     // --- Loot Fabricator ---------------------------------------------------------------------
     //
-    // Both scenes stage on ponder/loot_fabricator.nbt: the machine raised on a brass casing at the
-    // centre, a belt running in from the north and out to the south under a brass funnel each, and
-    // the whole thing driven from a gear train along the east edge.
+    // Both scenes stage on ponder/loot_fabricator.nbt: the machine on a brass casing at the centre,
+    // belts in from the north and out to the south under a funnel each, driven from a gear train
+    // along the east edge.
     //
     // The machine faces west because Ponder's camera is fixed at yRotation 145, which puts the north
-    // and west faces of every block toward the viewer. A south-facing machine shows the camera its
-    // back, which is exactly what the first cut of this scene did.
+    // and west faces toward the viewer. A south-facing machine shows the camera its back.
 
     /** The machine and its casing. */
     private static Selection fabricatorMachine(SceneBuildingUtil util) {
@@ -508,9 +504,9 @@ public class SimulacraScenes {
      * Spending Predictions: a funnel in, a funnel out, and a shaft rather than an array.
      *
      * <p>Both belts lie along Z, and belt travel is
-     * {@code Direction.fromAxisAndDirection(axis, speed < 0 ^ axis == X)} — so off the X axis a
-     * positive speed is the one that carries items south. Both belts therefore run south on a single
-     * positive speed: the northern one south into the machine, the southern one south away from it.
+     * {@code Direction.fromAxisAndDirection(axis, speed < 0 ^ axis == X)}, so off the X axis a
+     * positive speed carries items south. Both belts therefore run south on one positive speed: the
+     * northern one into the machine, the southern one away from it.
      */
     public static void lootFabricator(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
@@ -539,7 +535,6 @@ public class SimulacraScenes {
                 .text("The Loot Fabricator turns Predictions into real drops. Unlike the machines upstream it runs on rotation, not compute");
         scene.idle(100);
 
-        // Predictions in.
         scene.world().showSection(fabricatorIntake(util), Direction.SOUTH);
         scene.idle(15);
         // Insertion is refused when the side argument equals the belt's direction of travel, so
@@ -560,7 +555,7 @@ public class SimulacraScenes {
                         ? state.setValue(LootFabricatorBlock.LIT, true) : state, false);
         scene.idle(60);
 
-        // Drops out. Assorted, because unfiltered is the default and the honest mode.
+        // Drops out, assorted: unfiltered is the default mode.
         scene.world().showSection(fabricatorOutput(util), Direction.NORTH);
         scene.idle(15);
         scene.effects().indicateSuccess(fabricator);
@@ -587,11 +582,8 @@ public class SimulacraScenes {
     }
 
     /**
-     * Choosing a drop.
-     *
-     * <p>Ponder cannot open a screen, so this teaches one by contrast instead of showing it: the same
-     * build as the previous scene, run again, with a single item type leaving the machine rather than
-     * an assortment. The difference is the lesson.
+     * Choosing a drop. Ponder cannot open a screen, so this teaches by contrast: the previous scene's
+     * build run again, with one item type leaving the machine instead of an assortment.
      */
     public static void lootFabricatorChoosing(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);

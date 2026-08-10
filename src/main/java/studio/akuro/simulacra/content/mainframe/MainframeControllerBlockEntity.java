@@ -31,9 +31,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Discovers the Cognition Array (flood-fill through Data Cables), then each tick sums the compute of
- * every connected Neural Node into a pool. The pool is what consumers (Simulation Chambers, training
- * jobs) draw from.
+ * Discovers the Cognition Array by flood-fill through Data Cables, then each tick sums the compute of
+ * every connected Neural Node into the pool consumers draw from.
  */
 public class MainframeControllerBlockEntity extends BlockEntity implements IHaveGoggleInformation {
 
@@ -68,10 +67,9 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
             rescanNetwork();
         }
 
-        // One network, one owner. Every controller on a shared network discovers the same peer set,
-        // so "lowest position wins" makes each of them reach the same conclusion with no messaging
-        // between them. Without this each controller pools the same nodes independently and the
-        // network's compute is multiplied by the number of controllers sitting on it.
+        // One network, one owner. Every controller sees the same peer set, so "lowest position wins"
+        // needs no messaging between them. Without it each controller pools the same nodes and the
+        // network's compute is multiplied by the number of controllers on it.
         boolean isPrimary = peerControllers.stream()
                 .noneMatch(peer -> Long.compare(peer.asLong(), worldPosition.asLong()) < 0);
         if (!isPrimary) {
@@ -79,9 +77,8 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
             return;
         }
 
-        // Array output: each driven node contributes base compute from its speed, and a larger array
-        // is more efficient (Steam-Engine-style: bigger structure, more output). A node spinning alone
-        // outside an array contributes nothing because it is never in any controller's connectedNodes.
+        // Each driven node contributes compute from its speed, and larger arrays are more efficient.
+        // A node spinning outside any array contributes nothing: it is in no controller's node set.
         float raw = 0f;
         int active = 0;
         float computePerRpm = SimulacraConfig.COMPUTE_PER_RPM.get().floatValue();
@@ -91,10 +88,8 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
                 float speed = Math.abs(node.getSpeed());
                 if (speed > 0f) {
                     // Each node burns the first few RPM on itself. Stress is linear in speed, so
-                    // without this the compute-per-SU rate is speed-invariant and the array bonus
-                    // makes many slow nodes strictly better than a few fast ones - one correct build.
-                    // Charging every node an overhead means width has a real cost and the crossover
-                    // moves with how much stress you can afford.
+                    // without an overhead the compute-per-SU rate is speed-invariant and the array
+                    // bonus makes many slow nodes strictly better than a few fast ones.
                     raw += Math.max(0f, speed - idleRpm) * computePerRpm;
                     active++;
                 }
@@ -115,19 +110,14 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
 
-        // Light the dashboard only while the array is actually producing compute.
         boolean lit = newTotal > 0f;
         setLit(lit);
-        // The array is the only continuous sound in the mod, and the one that tells you at a distance
-        // that your base is alive. Offset by position so a wall of controllers does not thud in
-        // unison, and paced to match how vanilla spaces the beacon drone it borrows.
+        // Offset by position so a wall of controllers does not thud in unison, and paced to match
+        // how vanilla spaces the beacon drone this borrows.
         if (lit && Math.floorMod(level.getGameTime() + worldPosition.hashCode(), AMBIENT_INTERVAL) == 0) {
             playSound(ModSounds.ARRAY_AMBIENT.get(), 0.2f, 1.6f);
         }
 
-        // Hand the pooled compute to connected consumers. When demand exceeds supply, split it
-        // proportionally to demand so every chamber keeps progressing; in-order allocation would let
-        // scan order starve the chambers at the back of the list.
         float totalDemand = 0f;
         List<SimulationChamberBlockEntity> consumers = new ArrayList<>();
         for (BlockPos chamberPos : connectedChambers) {
@@ -137,11 +127,10 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
             }
         }
 
-        // Two passes, so surplus compute is spent rather than discarded. Everyone's rated demand is
-        // covered first (split proportionally when the array cannot cover it, since in-order
-        // allocation would let scan order starve the chambers at the back). Only then does whatever
-        // is left over get pushed into overclock headroom, so a chamber never runs hot while another
-        // is still starving.
+        // Two passes, so surplus is spent rather than discarded. Rated demand is covered first, split
+        // proportionally when the array cannot cover it (in-order allocation would let scan order
+        // starve the chambers at the back). Only leftovers go into overclock headroom, so no chamber
+        // runs hot while another is starving.
         float ratio = totalDemand > newTotal && totalDemand > 0f ? newTotal / totalDemand : 1f;
         float[] granted = new float[consumers.size()];
         float spent = 0f;
@@ -170,8 +159,8 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
     }
 
     /**
-     * Stand down because another controller owns this network: produce nothing, drive nothing, and
-     * go dark so the redundant controller is visibly inert rather than silently duplicating output.
+     * Stand down because another controller owns this network: produce nothing, drive nothing, go
+     * dark, so the redundant controller is visibly inert rather than silently duplicating output.
      */
     private void goDormant() {
         if (totalCompute != 0f || nodeCount != 0 || activeNodeCount != 0 || primary) {
@@ -186,9 +175,8 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
     }
 
     /**
-     * Drives the dashboard light, announcing the two transitions worth hearing. Spin-up and wind-down
-     * are the moments a player wants to notice from across the base — an array that quietly stopped
-     * because a shaft broke is otherwise indistinguishable from one that is merely idle.
+     * Drives the dashboard light, with a cue on spin-up and wind-down: an array that stopped because
+     * a shaft broke is otherwise indistinguishable from one that is merely idle.
      */
     private void setLit(boolean lit) {
         BlockState state = getBlockState();
@@ -205,10 +193,7 @@ public class MainframeControllerBlockEntity extends BlockEntity implements IHave
         level.playSound(null, worldPosition, sound, SoundSource.BLOCKS, volume, pitch);
     }
 
-    /**
-     * Flood-fill outward from the controller. Cables conduct (search continues through them); Neural
-     * Nodes are leaves (collected, but the search does not pass through them).
-     */
+    /** Flood-fill outward from the controller; see the per-block cases for what conducts. */
     private void rescanNetwork() {
         connectedNodes.clear();
         connectedChambers.clear();

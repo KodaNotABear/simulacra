@@ -17,16 +17,12 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * A unit of simulated value for one specific mob.
+ * A unit of simulated value for one specific mob, printed by the Simulation Chamber in place of loot.
+ * One Prediction is worth one roll of its subject's table, whatever that contains; which drop to
+ * actually take is chosen later at the Loot Fabricator, priced by how often the mob drops it.
  *
- * <p>The Simulation Chamber prints these instead of loot. A Prediction is deliberately fungible: one
- * of them is worth one roll of its subject's loot table, whatever that happens to contain. Choosing
- * which drop to actually take happens later, at the Loot Fabricator, where the price of each item is
- * derived from how often that mob really drops it.
- *
- * <p>That split is the whole point. Filtering at the chamber would either throw away everything you
- * did not ask for, or hand you rare drops at common-drop rates. Pricing at the fabricator keeps the
- * loot table's own economics intact while still letting you decide what you get.
+ * <p>Filtering at the chamber instead would either void everything you did not ask for or hand out
+ * rare drops at common-drop rates.
  */
 public class PredictionItem extends Item {
 
@@ -78,8 +74,7 @@ public class PredictionItem extends Item {
             tooltip.add(Component.translatable("tooltip.simulacra.prediction_unbound").withStyle(ChatFormatting.DARK_GRAY));
             return;
         }
-        // The subject is already in the item's name, so the only thing left is what to do with it —
-        // useful once, noise on every stack after that. Behind Shift, like Create's own items.
+        // The subject is already in the item's name, so the hint goes behind Shift like Create's own.
         studio.akuro.simulacra.content.ModTooltips.addSummary(tooltip, "tooltip.simulacra.prediction_hint");
     }
 }

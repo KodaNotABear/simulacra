@@ -21,16 +21,9 @@ import studio.akuro.simulacra.index.ModSounds;
 import studio.akuro.simulacra.index.ModStress;
 
 /**
- * Simulacra — a Create add-on.
- *
- * <p>The core idea: surplus rotational power (SU) is converted into a new resource, <b>compute</b>,
- * by a mechanical "neural network" datacenter. Compute trains models of mobs (gathered as data) and
- * then runs simulations that output that mob's loot, with <b>zero spawned entities</b> — so it scales
- * on a server where a physical mob farm would not.
- *
- * <p>This 0.1.0 scaffold ships only the first vertical slice: the {@code Neural Node}, the block that
- * turns rotation into a compute rate. Everything downstream (Mainframe Controller, Simulation Chamber,
- * data models, the substrate chain) is documented in DESIGN.md and stubbed for later.
+ * Simulacra, a Create add-on. Surplus rotational power is converted into compute by a mechanical
+ * "neural network" datacenter; compute trains models of mobs and runs simulations that output their
+ * loot with no entities spawned, so it scales where a physical mob farm would not.
  */
 @Mod(Simulacra.MOD_ID)
 public class Simulacra {
@@ -61,8 +54,8 @@ public class Simulacra {
                 Capabilities.ItemHandler.BLOCK,
                 ModBlockEntities.SIMULATION_CHAMBER.get(),
                 (chamber, side) -> chamber.getItemHandler());
-        // And the Fabricator's, which had a handler and never registered it — so no funnel could feed
-        // it Predictions or pull its output, which is the whole way the machine is meant to be used.
+        // And the Fabricator's, which had a handler but never registered it, so no funnel could feed
+        // it Predictions or pull its output.
         event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK,
                 ModBlockEntities.LOOT_FABRICATOR.get(),
@@ -70,10 +63,10 @@ public class Simulacra {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // Create's stress registries are not thread-safe to touch off-thread; enqueue onto the main thread.
+        // Create's stress registries are not thread-safe off-thread; enqueue onto the main thread.
         event.enqueueWork(ModStress::register);
-        // DisplaySource.BY_BLOCK is a plain runtime map rather than a registry, so it is filled here,
-        // once both the blocks and the sources exist.
+        // DisplaySource.BY_BLOCK is a plain runtime map, not a registry, so it is filled here once
+        // both the blocks and the sources exist.
         event.enqueueWork(ModDisplaySources::attachToBlocks);
         LOGGER.info("Simulacra loaded: rotation-to-compute online.");
     }

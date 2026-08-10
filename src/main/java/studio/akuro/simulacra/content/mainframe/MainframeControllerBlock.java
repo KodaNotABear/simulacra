@@ -28,11 +28,10 @@ import studio.akuro.simulacra.content.ModTooltips;
 import studio.akuro.simulacra.index.ModBlockEntities;
 
 /**
- * The root of a Cognition Array. Pools compute from all Neural Nodes reachable through Data Cables.
- *
- * <p>It flood-fills the array, sums its compute, and splits the pool across connected Simulation
- * Chambers in proportion to demand, spending any surplus on overclocking them. One network is owned by
- * exactly one controller; the rest go dormant. Right-clicking reports the pool, and goggles show it too.
+ * The root of a Cognition Array. Flood-fills for every Neural Node reachable through Data Cables,
+ * sums their compute, and splits the pool across connected Simulation Chambers in proportion to
+ * demand, spending surplus on overclocking. One network is owned by exactly one controller; the rest
+ * go dormant.
  */
 public class MainframeControllerBlock extends HorizontalDirectionalBlock
         implements EntityBlock, IWrenchable {
@@ -58,7 +57,6 @@ public class MainframeControllerBlock extends HorizontalDirectionalBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Screen faces the player who placed it.
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 

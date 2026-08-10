@@ -24,8 +24,7 @@ public final class DataMatrixEvents {
             return;
         }
         ResourceLocation typeId = EntityType.getKey(dead.getType());
-        // Bosses are rare kills, so each one is worth far more data; without this a boss model would
-        // take dozens of boss kills to train.
+        // Bosses are rare kills, so each is worth far more data than a regular mob's.
         int data = dead.getType().is(Tags.EntityTypes.BOSSES) ? SimulacraConfig.BOSS_KILL_DATA.get() : 1;
         DataMatrixItem.recordKill(player, typeId, data);
     }

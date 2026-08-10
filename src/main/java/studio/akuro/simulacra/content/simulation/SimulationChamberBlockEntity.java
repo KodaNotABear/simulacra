@@ -76,15 +76,9 @@ public class SimulationChamberBlockEntity extends BlockEntity
     /**
      * How the chamber answers a redstone signal.
      *
-     * <p>Create players gate machinery on redstone constantly — a clock, a threshold switch on a
-     * storage bank, a lever by the door — and a machine with no way to be told to stop has to be
-     * unplugged from its whole array instead.
-     *
-     * <p>There is deliberately no run-only-when-powered mode. Create funnels stop passing items while
-     * they carry a signal, and a funnel on the chamber is the normal build rather than an edge case,
-     * so a chamber that needed power to run would have its substrate and its output cut off by the
-     * very signal that started it. Powering to stop has no such problem: the machine and its funnels
-     * go quiet together, which is what was being asked for.
+     * <p>No run-only-when-powered mode: Create funnels stop passing items while powered, so a chamber
+     * that needed power to run would have its substrate and output cut off by the signal that started
+     * it. Powering to stop takes the machine and its funnels down together.
      */
     public enum RedstoneMode { IGNORED, OFF_WHEN_POWERED }
 
@@ -92,7 +86,7 @@ public class SimulationChamberBlockEntity extends BlockEntity
     /** How often a working chamber repeats its loop, matching the array hum's cadence. */
     private static final int AMBIENT_INTERVAL = 80;
 
-    // Balance values are read live from config so packs can retune them; see SimulacraConfig.
+    // Read live from config so packs can retune them.
     private static float demand() {
         return SimulacraConfig.CHAMBER_COMPUTE_DEMAND.get().floatValue();
     }
@@ -122,7 +116,7 @@ public class SimulationChamberBlockEntity extends BlockEntity
 
         @Override
         protected void onContentsChanged(int slot) {
-            // Push a block update so the client-side goggle/status sees substrate changes immediately.
+            // Block update so the client goggle/status sees substrate changes immediately.
             markUpdated();
         }
     };
@@ -131,10 +125,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            // Any change to the buffer may have made room for the batch that last failed to fit,
-            // so let the chamber try again rather than staying blocked until something else pokes it.
+            // Any change may have made room for the batch that last failed to fit, so let it retry.
             outputBlocked = false;
-            // Keep attached comparators tracking the buffer.
             if (level != null && !level.isClientSide) {
                 level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
             }
@@ -142,13 +134,12 @@ public class SimulationChamberBlockEntity extends BlockEntity
     };
     /**
      * Set when a rolled batch would not fit even though the buffer had a free slot. Without it the
-     * chamber would sit at full progress drawing its whole compute allowance forever, starving every
-     * other chamber on the array while producing nothing.
+     * chamber sits at full progress drawing its whole compute allowance and starves the array.
      */
     private boolean outputBlocked = false;
     /**
      * Stall state at the last check, so the cue fires on the transition rather than every tick.
-     * Null means "not yet observed", which keeps a chamber that loads in already stalled quiet.
+     * Null means "not yet observed", keeping a chamber that loads in already stalled quiet.
      */
     private StallReason lastStallReason = null;
     /** Single capability face: push substrate in, pull loot out, never the reverse. */
@@ -159,11 +150,9 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * The substrate buffer, for the screen's own slot.
-     *
-     * <p>Deliberately not the same thing as {@link #getItemHandler()}: that one is the face shown to
-     * hoppers and funnels and refuses to hand substrate back, which is right for automation and wrong
-     * for a player who put the wrong tier in.
+     * The substrate buffer, for the screen's own slot. Not {@link #getItemHandler()}: that face
+     * refuses to hand substrate back, which is right for automation and wrong for a player who
+     * loaded the wrong tier.
      */
     public ItemStackHandler getSubstrateHandler() {
         return substrate;
@@ -174,7 +163,6 @@ public class SimulationChamberBlockEntity extends BlockEntity
         return inventory;
     }
 
-    /** The capability handed to neighbours: substrate in, loot out. */
     public IItemHandler getItemHandler() {
         return itemHandler;
     }
@@ -190,9 +178,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Pulls the loaded substrate back out. The item handler deliberately refuses to give substrate
-     * back to automation (it is an input face, not a buffer), which left breaking the block as the
-     * only way to change tiers by hand.
+     * Pulls the loaded substrate back out by hand. The item handler refuses to give it to automation,
+     * so without this the only way to change tiers is to break the block.
      */
     public ItemStack removeSubstrate() {
         ItemStack held = substrate.getStackInSlot(0);
@@ -219,7 +206,7 @@ public class SimulationChamberBlockEntity extends BlockEntity
         return Mth.floor(fill / inventory.getSlots() * 14f) + (empty ? 0 : 1);
     }
 
-    /** Pops the substrate and loot buffers into the world; called when the chamber is broken. */
+    /** Pops both buffers into the world when the chamber is broken. */
     public void dropContents() {
         if (level == null) {
             return;
@@ -258,24 +245,17 @@ public class SimulationChamberBlockEntity extends BlockEntity
         int grade = DataMatrixItem.getModelTier(model);
         float mult = 1f - SimulacraConfig.MODEL_SPEED_BONUS.get().floatValue() * Math.max(0, grade - 1);
         // Total cost scales alongside the draw rate. Scaling only the rate would make a boss job
-        // finish ten times faster than a zombie's, since the same cost would be paid by a far larger
-        // per-tick draw. Scaling both means a harder subject needs a proportionally bigger array to
-        // run at the same pace, which is the point, rather than being quicker for free.
+        // finish faster than a zombie's, since the same cost is paid by a much larger per-tick draw.
         return jobCost() * Math.max(0.25f, mult) * demandMultiplier();
     }
 
-    /** Only ask the array for compute when there is real work to do and it would not stall. */
     /**
-     * Rated compute draw: what this chamber wants per tick to run at its normal pace.
-     *
-     * <p>Scaled by what is actually being simulated. Finer substrate and boss-grade subjects cost
-     * proportionally more, so the size of an array decides what it is capable of simulating rather
-     * than only how many chambers it can keep fed. Training is charged at the base rate, since the
-     * substrate is not involved yet.
+     * Rated compute draw per tick, scaled by what is being simulated: finer substrate and boss-grade
+     * subjects cost proportionally more, so array size decides what can be simulated and not just how
+     * many chambers can be fed. Training is charged at the base rate, no substrate involved yet.
      */
     public float getComputeDemand() {
-        // A chamber held off by redstone asks for nothing, so the array's budget goes to the ones
-        // still working rather than being reserved against a machine that is deliberately idle.
+        // A chamber held off by redstone asks for nothing, so the budget goes to the ones working.
         if (isRedstoneBlocked()) {
             return 0f;
         }
@@ -313,8 +293,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Compute above the rated draw still counts, but at a discount, so a big array speeds a chamber
-     * up without ever beating the throughput of simply building another one.
+     * Compute above the rated draw counts at a discount, so a big array speeds a chamber up without
+     * beating the throughput of building another one.
      */
     private float effectiveProgress(float supplied) {
         float rated = getComputeDemand();
@@ -325,22 +305,19 @@ public class SimulationChamberBlockEntity extends BlockEntity
         return rated + (supplied - rated) * efficiency;
     }
 
-    /** True only while a simulation can actually make progress. */
     public boolean canSimulate() {
         return stallReason() == StallReason.NONE;
     }
 
-    /** Simulating but blocked: used to surface a reason in the status readout. */
     public boolean isStalled() {
         return getMode() == Mode.SIMULATING && !canSimulate();
     }
 
-    /** The first blocker in priority order, or NONE when the chamber can run. */
     public RedstoneMode getRedstoneMode() {
         return redstoneMode;
     }
 
-    /** Steps to the next mode; called from the screen's button. */
+    /** Called from the screen's button. */
     public void cycleRedstoneMode() {
         RedstoneMode[] all = RedstoneMode.values();
         redstoneMode = all[(redstoneMode.ordinal() + 1) % all.length];
@@ -348,7 +325,6 @@ public class SimulationChamberBlockEntity extends BlockEntity
         markUpdated();
     }
 
-    /** True when the current signal and mode say this chamber should be idle. */
     public boolean isRedstoneBlocked() {
         if (redstoneMode == RedstoneMode.IGNORED || level == null) {
             return false;
@@ -356,13 +332,14 @@ public class SimulationChamberBlockEntity extends BlockEntity
         return level.hasNeighborSignal(worldPosition);
     }
 
+    /** The first blocker in priority order, or NONE when the chamber can run. */
     public StallReason stallReason() {
-        // Checked first: a chamber told to stop is stopped, whatever else is or is not wrong with it.
+        // First: a chamber told to stop is stopped, whatever else is wrong with it.
         if (isRedstoneBlocked()) {
             return StallReason.REDSTONE;
         }
-        // A model whose mob no longer exists (its mod was removed) can never print anything. Report
-        // it instead of letting the chamber draw compute against a job that must always fail.
+        // A model whose mob no longer exists (its mod was removed) can never print anything, so
+        // report it rather than draw compute against a job that must always fail.
         if (DataMatrixItem.getBoundMob(model).isPresent() && resolveBoundType() == null) {
             return StallReason.UNKNOWN_SUBJECT;
         }
@@ -401,8 +378,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Whether the buffer could take any more items at all. A partly-filled slot still has room, so
-     * counting only empty slots would call nine slots of one rotten flesh "full".
+     * Whether the buffer could take any more items. Counting only empty slots would call nine slots
+     * holding one rotten flesh each "full".
      */
     private boolean hasOutputRoom() {
         for (int slot = 0; slot < inventory.getSlots(); slot++) {
@@ -431,26 +408,23 @@ public class SimulationChamberBlockEntity extends BlockEntity
             float applied = effectiveProgress(amount);
             switch (getMode()) {
                 case TRAINING -> {
-                    // Training is the longest wait in the mod and was completely silent, so a player
-                    // could not tell a working chamber from a stalled one without walking up to it.
+                    // A silent chamber looks the same working as stalled, so training gets a cue.
                     // Offset by position so a bank of chambers does not churn in lockstep.
                     if (Math.floorMod(level.getGameTime() + worldPosition.hashCode(), AMBIENT_INTERVAL) == 0) {
                         playSound(ModSounds.CHAMBER_TRAINING.get(), 0.2f, 0.9f);
                     }
                     progress += applied;
                     if (progress >= trainCost()) {
-                        // Carry the overshoot instead of discarding it, so a chamber fed far more
-                        // than its rated draw is not quietly throwing away most of the last tick.
+                        // Carry the overshoot: an overclocked chamber would otherwise bin most of
+                        // the last tick.
                         progress -= trainCost();
                         DataMatrixItem.setTrained(model, true);
                         DataMatrixItem.setProgress(model, 0f);
-                        // The model resolving is the payoff of a long wait, so it gets Create's
-                        // confirm chime rather than another machine noise.
+                        // Payoff of a long wait, so Create's confirm chime rather than machine noise.
                         AllSoundEvents.CONFIRM.playOnServer(level, worldPosition, 0.6f, 1.0f);
                     }
                 }
                 case SIMULATING -> {
-                    // Stall (no progress) unless we have substrate and somewhere to put the loot.
                     if (canSimulate()) {
                         float cost = currentCost();
                         progress += applied;
@@ -458,9 +432,9 @@ public class SimulationChamberBlockEntity extends BlockEntity
                             if (runJob()) {
                                 progress -= cost;
                             } else {
-                                // Loot did not fit after all. Hold at full rather than spilling, and
-                                // runJob has latched outputBlocked, so demand drops to zero until the
-                                // buffer changes and the job resumes from here.
+                                // Loot did not fit. Hold at full rather than spilling; runJob has
+                                // latched outputBlocked, so demand drops to zero until the buffer
+                                // changes and the job resumes from here.
                                 progress = cost;
                             }
                         }
@@ -473,9 +447,9 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Rolls one batch of loot and, only if all of it fits in the buffer, commits it and spends one
-     * substrate. Returns false (leaving everything untouched) when the mob is unresolvable or the loot
-     * would not fit, so the caller can stall instead of voiding drops.
+     * Rolls one batch of loot and, only if all of it fits, commits it and spends one substrate.
+     * Returns false leaving everything untouched when the mob is unresolvable or the loot would not
+     * fit, so the caller stalls instead of voiding drops.
      */
     private boolean runJob() {
         if (!(level instanceof ServerLevel server) || !canSimulate()) {
@@ -483,20 +457,17 @@ public class SimulationChamberBlockEntity extends BlockEntity
         }
         EntityType<?> type = resolveBoundType();
         if (type == null) {
-            // The mob's mod is no longer present; the model is stranded. Treat as a no-op job.
+            // The mob's mod is gone; the model is stranded. Treat as a no-op job.
             return false;
         }
         List<ItemStack> drops = new ArrayList<>();
-        // Accuracy check: a low-grade model can botch the print. A failed job spends the compute and
-        // substrate like any other, but produces a Corrupted Imprint instead of loot. The model still
-        // learns from the failure, so even a Coarse model grades up over time.
+        // A low-grade model can botch the print. A failed job spends the compute and substrate like
+        // any other but produces a Corrupted Imprint, and still learns from the failure.
         boolean success = server.random.nextFloat() < DataMatrixItem.accuracy(model);
         if (success) {
-            // Substrate grade sets the fidelity of the print, in Predictions rather than raw loot: one
-            // Prediction is one roll of this subject's table, and the Loot Fabricator decides later
-            // what shape that value takes. Handing out items here instead would mean either burying
-            // the player in whatever the table felt like, or letting a filter hand out rare drops at
-            // common-drop rates. A Self-Aware model squeezes out an extra roll on top.
+            // Substrate grade sets how many rolls the print is worth. Output is Predictions, not raw
+            // loot: one Prediction is one roll of the subject's table, and the Loot Fabricator decides
+            // later what shape that value takes. Self-Aware models get an extra roll.
             SubstrateTier tier = currentTier();
             int rolls = tier.lootRolls();
             if (DataMatrixItem.getModelTier(model) >= 4) {
@@ -505,16 +476,15 @@ public class SimulationChamberBlockEntity extends BlockEntity
             ItemStack predictions = new ItemStack(ModItems.PREDICTION.get(), rolls);
             PredictionItem.setSubject(predictions, BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
             drops.add(predictions);
-            // Boss subjects can resonate with the substrate and print a catalyst, the renewable
-            // route to more pristine blanks (the circular endgame economy).
+            // Boss subjects can also print a catalyst, the renewable route to pristine blanks.
             if (type.is(Tags.EntityTypes.BOSSES)
                     && server.random.nextFloat() < SimulacraConfig.CATALYST_CHANCE.get().floatValue()) {
                 drops.add(new ItemStack(ModItems.RESONANT_CATALYST.get()));
             }
         }
         if (!drainFits(drops)) {
-            // Latch until the buffer changes; stallReason reports OUTPUT_FULL meanwhile, which drops
-            // this chamber's compute demand to zero instead of holding the array hostage.
+            // Latch until the buffer changes. stallReason then reports OUTPUT_FULL, dropping this
+            // chamber's demand to zero instead of holding the array hostage.
             outputBlocked = true;
             return false;
         }
@@ -525,23 +495,17 @@ public class SimulationChamberBlockEntity extends BlockEntity
             }
         }
         if (!success) {
-            // A failed print leaves a Corrupted Imprint, but it is deliberately handled after the
-            // fit check above and its remainder is dropped rather than stalling the machine.
-            //
-            // Predictions and Corrupted Imprints leave a chamber by the same face, and nothing
-            // downstream accepts both — a Loot Fabricator takes Predictions only. So the normal
-            // automated build filters for Predictions and leaves the corrupted ones behind, where
-            // they accumulate at the failure rate until they own all nine slots and the chamber
-            // stalls for good. Letting the failure product block the machine that produced it is
-            // the worse of the two failure modes; losing one is recoverable, deadlock is not.
+            // Corrupted Imprints are inserted after the fit check on purpose, and any remainder is
+            // voided rather than stalling. A Loot Fabricator takes Predictions only, so the normal
+            // build filters them out and leaves corrupted ones to pile up in the nine output slots
+            // until the chamber deadlocks. Losing one is recoverable; deadlock is not.
             ItemHandlerHelper.insertItemStacked(inventory,
                     new ItemStack(ModItems.CORRUPTED_IMPRINT.get()), false);
         }
         substrate.extractItem(0, SimulacraConfig.SUBSTRATE_PER_JOB.get(), false);
-        // A finished job is the blank being impressed and cured: the press sound pitched well down,
-        // so it reads as a heavier, slower relative of the Fabricator's strike.
+        // The press sound pitched well down: a heavier, slower relative of the Fabricator's strike.
         AllSoundEvents.MECHANICAL_PRESS_ACTIVATION.playOnServer(server, worldPosition, 0.35f, 0.65f);
-        // Learning by doing: every completed job feeds data back into the model.
+        // Learning by doing: a trained model keeps grading up off its own jobs.
         DataMatrixItem.addSimData(model, 1);
         return true;
     }
@@ -573,13 +537,12 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * The loot table a simulation of this mob should roll.
+     * The loot table a simulation of this mob should roll: a Simulacra override at
+     * {@code simulacra:simulation/<mob path>} if present, else the mob's own table.
      *
-     * <p>Prefers a Simulacra override at {@code simulacra:simulation/<mob path>}, falling back to the
-     * mob's own table. The override exists because some mobs drop nothing through a loot table at all:
-     * the Wither's nether star and the dragon's rewards are handed out in {@code dropCustomDeathLoot}
-     * and hardcoded death logic, so a simulation rolling only the vanilla table produces literally
-     * nothing for them. Datapacks can add or replace an override for any mob without touching Java.
+     * <p>The override exists because some mobs drop nothing through a loot table. The Wither's nether
+     * star and the dragon's rewards come from {@code dropCustomDeathLoot} and hardcoded death logic,
+     * so rolling the vanilla table alone yields nothing. Datapacks can override any mob.
      */
     private LootTable simulationTable(ServerLevel server, EntityType<?> type) {
         ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
@@ -593,10 +556,9 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Rolls the bound mob's live loot table so any drops other mods inject into that mob's pool are
-     * simulated too, instead of us hard-coding a drop list. We instantiate a throwaway entity only to
-     * satisfy the loot context's required THIS_ENTITY parameter; it is never added to the world (farming
-     * without spawning mobs is the whole point of the chamber) and is discarded right after the roll.
+     * Rolls the bound mob's live loot table, so drops other mods inject into that mob's pool are
+     * simulated too. The throwaway entity exists only to satisfy the loot context's required
+     * THIS_ENTITY parameter; it is never added to the world and is discarded after the roll.
      */
     private List<ItemStack> rollSimulatedLoot(ServerLevel server, EntityType<?> type) {
         LootTable table = simulationTable(server, type);
@@ -612,10 +574,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
         }
         Vec3 origin = Vec3.atCenterOf(worldPosition.above());
         living.moveTo(origin.x, origin.y, origin.z, 0f, 0f);
-        // The kill is attributed to a fake player. Without it every killed_by_player-gated drop is
-        // silently skipped, which is most of what players actually want a model for: blaze rods,
-        // wither skeleton skulls, zombie iron. A model trained on blazes that cannot print blaze rods
-        // reads as broken, so the simulation stands in for a player kill rather than an anonymous one.
+        // The kill is attributed to a fake player, or every killed_by_player-gated drop is silently
+        // skipped: blaze rods, wither skeleton skulls, zombie iron.
         FakePlayer killer = FakePlayerFactory.getMinecraft(server);
         killer.moveTo(origin.x, origin.y, origin.z, 0f, 0f);
         LootParams params = new LootParams.Builder(server)
@@ -675,11 +635,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Plays the stall cue once, on the tick a running chamber first becomes blocked.
-     *
-     * <p>Deliberately quiet, and deliberately not a loop. The real signal that something is wrong is
-     * the working sound stopping; this is only a nudge to look. An alarm is welcome once and resented
-     * by the twentieth chamber.
+     * Plays the stall cue once, on the tick a running chamber first becomes blocked. Quiet, and not a
+     * loop: the real signal is the working sound stopping, this is only a nudge to look.
      */
     private void announceStall() {
         StallReason reason = getMode() == Mode.SIMULATING ? stallReason() : StallReason.NONE;
@@ -696,9 +653,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
     }
 
     /**
-     * Server ticker: a chamber is normally driven by its controller's tick, so if the controller is
-     * broken or the cable is cut, supplyCompute stops arriving and the viewport would stay lit forever.
-     * This watchdog notices the silence and goes dark.
+     * A chamber is driven by its controller's tick, so a broken controller or cut cable stops
+     * supplyCompute arriving and would leave the viewport lit forever. This notices and goes dark.
      */
     public void tickWatchdog() {
         if (level == null || level.isClientSide) {
@@ -711,7 +667,6 @@ public class SimulationChamberBlockEntity extends BlockEntity
         }
     }
 
-    /** Lights the viewport only while the chamber is being fed compute. */
     private void updateLit(boolean lit) {
         if (level == null) {
             return;
@@ -737,7 +692,6 @@ public class SimulationChamberBlockEntity extends BlockEntity
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        // Show which mob this chamber is modelling (and the model's grade), readable through goggles.
         DataMatrixItem.getBoundMob(model).ifPresent(key -> {
             Component subject = DataMatrixItem.isTrained(model)
                     ? Component.translatable("tooltip.simulacra.sim_model_graded", DataMatrixItem.mobName(key),
@@ -768,9 +722,7 @@ public class SimulationChamberBlockEntity extends BlockEntity
                     .translatable("tooltip.simulacra.sim_substrate", substrate.getStackInSlot(0).getCount())
                     .withStyle(ChatFormatting.DARK_GRAY)));
         }
-        // How much finished work is sitting in the buffer. Without this the only way to know whether a
-        // chamber is backing up — or whether the run you left going produced anything — is to break it
-        // open, and a chamber whose buffer fills stops dead.
+        // Finished work sitting in the buffer, so a chamber backing up is visible without opening it.
         int stored = storedPredictions();
         if (stored > 0) {
             tooltip.add(Component.literal("    ").append(Component
@@ -798,7 +750,7 @@ public class SimulationChamberBlockEntity extends BlockEntity
         if (!model.isEmpty()) {
             tag.put("Model", model.save(registries));
         }
-        // Synced as well as saved, so the client goggle/status reflect substrate and buffer state.
+        // Synced as well as saved: the client goggle/status reads substrate and buffer state.
         tag.put("Inventory", inventory.serializeNBT(registries));
         tag.put("Substrate", substrate.serializeNBT(registries));
         tag.putByte("Redstone", (byte) redstoneMode.ordinal());
@@ -830,8 +782,8 @@ public class SimulationChamberBlockEntity extends BlockEntity
         if (tag.contains("Substrate")) {
             substrate.deserializeNBT(registries, tag.getCompound("Substrate"));
         }
-        // floorMod rather than a bare index: an ordinal written by a future version that dropped or
-        // reordered a mode would otherwise throw on load and take the chunk with it.
+        // floorMod rather than a bare index: an out-of-range ordinal from another version would
+        // otherwise throw on load and take the chunk with it.
         RedstoneMode[] modes = RedstoneMode.values();
         redstoneMode = modes[Math.floorMod(tag.getByte("Redstone"), modes.length)];
     }

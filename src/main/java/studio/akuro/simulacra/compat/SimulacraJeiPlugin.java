@@ -17,17 +17,12 @@ import studio.akuro.simulacra.index.ModBlocks;
 import studio.akuro.simulacra.index.ModItems;
 
 /**
- * JEI integration.
+ * JEI integration. Never referenced from the mod's own code: JEI finds this class by scanning for
+ * {@link JeiPlugin}, so a pack without JEI never loads it and no runtime dependency is needed.
  *
- * <p>Compiled against JEI's API only, and never referenced from the mod's own code — JEI finds this
- * class by scanning for {@link JeiPlugin}, so a pack without JEI installed never loads it and no
- * runtime dependency is needed.
- *
- * <p>Two jobs. The first is subtypes: a Data Matrix bound to a zombie and one bound to a creeper are
- * the same item with different data, and without an interpreter JEI collapses them into a single
- * entry, so searching for a mob finds nothing and recipe lookup on a bound matrix is meaningless.
- * The second is the information pages, which are where the chain gets explained — the loop here runs
- * across four machines and is not something recipe shapes can convey on their own.
+ * <p>Two jobs. Subtypes, because without an interpreter JEI collapses matrices bound to different
+ * mobs into one entry and searching for a mob finds nothing. And the information pages, since the
+ * loop spans four machines and recipe shapes cannot convey it.
  */
 @JeiPlugin
 public class SimulacraJeiPlugin implements IModPlugin {
@@ -49,11 +44,8 @@ public class SimulacraJeiPlugin implements IModPlugin {
     }
 
     /**
-     * Groups stacks by whose data they hold and nothing else.
-     *
-     * <p>Deliberately ignores the data count and grade: a Coarse zombie matrix and a Self-Aware one
-     * are the same ingredient as far as looking things up goes, and splitting on progress would fill
-     * the ingredient list with a separate entry for every kill.
+     * Groups stacks by subject only. Data count and grade are ignored on purpose: splitting on
+     * progress would put a separate ingredient in the list for every kill.
      */
     // getLegacyStringSubtypeInfo is deprecated but still abstract on the interface, so it has to be
     // implemented; it returns the same grouping key as the modern method.

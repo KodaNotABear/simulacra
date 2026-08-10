@@ -18,12 +18,12 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * A data model carrier. Held in the offhand, a blank matrix binds to the first mob type defeated, then
- * accumulates "data" from further kills of that mob. Once it has enough data it can be trained (in a
- * Simulation Chamber, by spending compute); a trained matrix can then be simulated for that mob's loot.
+ * A data model carrier. Held in the offhand, a blank matrix binds to the first mob type defeated and
+ * accumulates data from further kills of it; with enough data it can be trained in a Simulation
+ * Chamber, and a trained matrix can then be simulated for that mob's loot.
  *
- * <p>State lives in the vanilla {@code minecraft:custom_data} component (keys "Mob", "Data", "Trained").
- * The item does not stack, so each matrix is its own model.
+ * <p>State lives in the vanilla {@code minecraft:custom_data} component (keys "Mob", "Data",
+ * "Trained"). The item does not stack, so each matrix is its own model.
  */
 public class DataMatrixItem extends Item {
     private static final String KEY_MOB = "Mob";
@@ -113,9 +113,8 @@ public class DataMatrixItem extends Item {
     /** Chance a simulation job on this model succeeds; failures print a Corrupted Imprint. */
     public static float accuracy(ItemStack stack) {
         return switch (getModelTier(stack)) {
-            // Grade 0 is untrained, and an untrained matrix cannot be simulated at all. It used to
-            // fall through to the Coarse figure and advertise itself as 70% accurate, which is a
-            // number for a thing it cannot yet do.
+            // Grade 0 is untrained and cannot be simulated at all; falling through to the Coarse
+            // figure advertised 70% accuracy for something it cannot yet do.
             case 0 -> 0f;
             case 2 -> SimulacraConfig.ACCURACY_TUNED.get().floatValue();
             case 3 -> SimulacraConfig.ACCURACY_DEEP.get().floatValue();
@@ -134,9 +133,8 @@ public class DataMatrixItem extends Item {
     }
 
     /**
-     * Bank training progress on the matrix itself. Previously this lived on the chamber and was
-     * wiped whenever a matrix was inserted or removed, so pulling one out at 99% silently binned
-     * the compute; nothing in the UI warned about it.
+     * Bank training progress on the matrix itself. Held on the chamber it was wiped on insert and
+     * removal, so pulling a matrix out at 99% silently binned the compute.
      */
     public static void setProgress(ItemStack stack, float progress) {
         update(stack, tag -> {
@@ -156,9 +154,9 @@ public class DataMatrixItem extends Item {
     }
 
     /**
-     * Records a kill of {@code type} worth {@code data} into the matrix held in the player's offhand: a
-     * blank matrix binds to that mob, a matrix already bound to it gains the data. Only the offhand slot
-     * is considered, so carried matrices do not bind to whatever the player happens to kill. Server-side.
+     * Records a kill of {@code type} worth {@code data} into the matrix in the player's offhand: a
+     * blank matrix binds, an already-bound one gains the data. Offhand only, so carried matrices do
+     * not bind to whatever the player happens to kill. Server-side.
      */
     public static void recordKill(Player player, ResourceLocation type, int data) {
         ItemStack matrix = player.getOffhandItem();
@@ -169,11 +167,10 @@ public class DataMatrixItem extends Item {
         Optional<String> bound = getBoundMob(matrix);
         if (bound.isEmpty()) {
             bindOrIncrement(matrix, key, data);
-            // The first kill is the one that permanently commits the matrix to a species. It happened
-            // silently before, which is how people ended up bound to the wrong mob without noticing.
+            // The first kill permanently commits the matrix to a species, so it is not silent.
             AllSoundEvents.CONFIRM_2.playOnServer(player.level(), player.blockPosition(), 0.7f, 1.4f);
         } else if (bound.get().equals(key)) {
-            // Trained models keep learning from kills too, so hands-on hunting accelerates grades.
+            // Trained models keep learning from kills, so hunting by hand accelerates grades.
             bindOrIncrement(matrix, key, getData(matrix) + data);
         }
     }

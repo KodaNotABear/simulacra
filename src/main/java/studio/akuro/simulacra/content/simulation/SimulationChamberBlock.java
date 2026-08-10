@@ -99,8 +99,8 @@ public class SimulationChamberBlock extends HorizontalDirectionalBlock
                     stack.shrink(loaded);
                     return ItemInteractionResult.SUCCESS;
                 }
-                // Nothing went in: either the slot is full or it already holds a different tier.
-                // Saying so beats the silent no-op this used to be.
+                // Nothing went in: the slot is full or already holds a different tier. Say so
+                // rather than no-op silently.
                 player.displayClientMessage(Component.translatable("message.simulacra.sim_substrate_rejected"), true);
                 return ItemInteractionResult.CONSUME;
             }
@@ -134,9 +134,6 @@ public class SimulationChamberBlock extends HorizontalDirectionalBlock
                     player.displayClientMessage(statusMessage(chamber), true);
                 }
             } else {
-                // Everything the old status message said, and the buffers besides, now live on a
-                // screen. Sneaking still pulls the matrix or substrate straight out, so the quick
-                // actions a player already has in their fingers keep working.
                 if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                     serverPlayer.openMenu(chamber, buf -> buf.writeBlockPos(pos));
                 }

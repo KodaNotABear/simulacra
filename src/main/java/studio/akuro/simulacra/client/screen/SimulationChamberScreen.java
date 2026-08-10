@@ -17,14 +17,9 @@ import studio.akuro.simulacra.content.simulation.SubstrateTier;
  * The Simulation Chamber's screen: what it is modelling, how well, what it is printing onto, and why
  * it has stopped if it has.
  *
- * <p>Mostly a readout, which is what Hostile Neural Networks' equivalent screen is — theirs is a
- * block of text and slots with no mob on it at all. The viewport is the one addition, and it earns
- * its place because the chamber is where a subject is trained: seeing which mob is bound is the first
- * question anyone opening this block has.
- *
- * <p>It draws the bound Data Matrix at scale rather than an entity directly. The matrix already knows
- * how to render its own subject, so drawing the item large gets the mob and its platform for free,
- * and there is exactly one piece of code deciding how a subject looks anywhere in the mod.
+ * <p>The viewport draws the bound Data Matrix scaled up rather than an entity directly. The matrix
+ * already knows how to render its own subject, so this gets the mob and its platform for free and
+ * keeps one piece of code deciding how a subject looks.
  */
 public class SimulationChamberScreen extends AbstractContainerScreen<SimulationChamberMenu> {
 
@@ -112,9 +107,8 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         // The six-argument blit assumes a 256x256 sheet. This texture is exactly the panel, so the
-        // size has to be passed explicitly or it samples a corner of an imagined 256x256
-        // sheet and stretches that over the panel — the background then disagrees with every slot
-        // position, which reads as the whole screen being scaled wrong.
+        // sheet size must be passed explicitly or it samples a corner of an imagined 256x256 sheet
+        // and stretches it, leaving the background disagreeing with every slot position.
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0,
                 imageWidth, imageHeight, imageWidth, imageHeight);
 
@@ -170,7 +164,7 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
             drawLine(graphics, line++, subject, SUBJECT);
 
             // Grade and accuracy get a line each. Joined they were the longest string on the panel
-            // and truncated every time; apart, neither comes close to the column width.
+            // and truncated every time.
             int tier = DataMatrixItem.getModelTier(model);
             drawLine(graphics, line++, DataMatrixItem.tierName(tier), TEXT);
             drawLine(graphics, line++, Component.translatable("gui.simulacra.chamber.accuracy",
@@ -178,19 +172,17 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
             drawLine(graphics, line, dataLine(model, tier), TEXT);
         }
 
-        // Substrate and status run the full width of the panel rather than the column, because both
-        // carry a name that a hundred and ten pixels cannot hold.
+        // Substrate and status run the panel's full width, not the column: both carry a name that
+        // 110 pixels cannot hold.
         drawFitted(graphics, substrateLine(), WIDE_X, WIDE_1, TEXT_DIM);
         drawFitted(graphics, statusLine(), WIDE_X, WIDE_2,
                 menu.getStallReason() == SimulationChamberBlockEntity.StallReason.NONE ? TEXT : 0xA03528);
     }
 
     /**
-     * How much data the matrix has, and what it is counting toward.
-     *
-     * <p>{@code nextTierThreshold} returns -1 both for an untrained matrix and for a maxed one, so
-     * reading it alone reports a brand new matrix as fully trained. Untrained ones count toward being
-     * trained at all, which is a different number.
+     * How much data the matrix has, and what it is counting toward. {@code nextTierThreshold} returns
+     * -1 for both an untrained matrix and a maxed one, so reading it alone reports a brand new matrix
+     * as fully trained; untrained ones count toward being trained at all.
      */
     private static Component dataLine(ItemStack model, int tier) {
         int data = DataMatrixItem.getData(model);
@@ -210,8 +202,7 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
         SubstrateTier loaded = SubstrateTier.fromStack(substrate);
         return loaded == null
                 ? Component.translatable("gui.simulacra.chamber.substrate_none")
-                // The tier name, not the item name: the tier is the only part of it that changes
-                // what the chamber can do, and the full name overruns even the wide row.
+                // The tier name, not the item name: the full name overruns even the wide row.
                 : Component.translatable("gui.simulacra.chamber.substrate",
                         Component.translatable("gui.simulacra.substrate." + loaded.name().toLowerCase()),
                         substrate.getCount());
@@ -223,11 +214,9 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
     }
 
     /**
-     * Draws a line, shortened if it would run past the panel edge.
-     *
-     * <p>Every string here is written to fit, but mob names come from whatever a pack contains and
-     * a translation can be any length, so nothing is trusted to fit on its own. The full text is
-     * always available by hovering the viewport.
+     * Draws a line, shortened if it would run past the panel edge. Mob names come from whatever a
+     * pack contains and translations can be any length, so nothing is trusted to fit. The full text
+     * is available by hovering the viewport.
      */
     private void drawFitted(GuiGraphics graphics, Component text, int x, int y, int colour) {
         drawFitted(graphics, text, x, y, colour, RIGHT_EDGE);
@@ -246,8 +235,7 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
     private Component statusLine() {
         SimulationChamberBlockEntity.StallReason stall = menu.getStallReason();
         if (stall != SimulationChamberBlockEntity.StallReason.NONE) {
-            // No bold: the row is already drawn red, and bold widens every glyph on the row that
-            // has the least space to give.
+            // No bold: the row is already red, and bold widens every glyph on the tightest row.
             return Component.translatable("gui.simulacra.chamber.stall." + stall.name().toLowerCase());
         }
         return Component.translatable("gui.simulacra.chamber.mode." + menu.getMode().name().toLowerCase());
@@ -259,9 +247,8 @@ public class SimulationChamberScreen extends AbstractContainerScreen<SimulationC
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
 
-        // Hovering the subject gives the whole readout untruncated. The panel is written to fit, but
-        // a long mob name or a translation can still overrun it, and a shortened line the player has
-        // no way to finish reading is worse than one more tooltip.
+        // Hovering the subject gives the whole readout untruncated, since a long mob name or
+        // translation can still overrun the panel.
         if (mouseX >= leftPos + VIEW_X && mouseX < leftPos + VIEW_X + VIEW_SIZE
                 && mouseY >= topPos + VIEW_Y && mouseY < topPos + VIEW_Y + VIEW_SIZE) {
             graphics.renderComponentTooltip(font, readout(), mouseX, mouseY);

@@ -4,8 +4,8 @@ import com.simibubi.create.api.stress.BlockStressValues;
 import studio.akuro.simulacra.SimulacraConfig;
 
 /**
- * Registers Create stress values for this mod's kinetic blocks. Run once, on the main thread, during
- * common setup (see {@link studio.akuro.simulacra.Simulacra}).
+ * Create stress values for this mod's kinetic blocks. Run once on the main thread during common setup
+ * (see {@link studio.akuro.simulacra.Simulacra}).
  */
 public class ModStress {
 
@@ -16,8 +16,8 @@ public class ModStress {
                 () -> SimulacraConfig.NEURAL_NODE_STRESS_IMPACT.get()
         );
 
-        // The Fabricator is the other half of the split: the array decides what you can simulate,
-        // the shaft decides how fast the results get stamped out.
+        // The other half of the split: the array decides what can be simulated, the shaft decides
+        // how fast results are stamped out.
         BlockStressValues.IMPACTS.register(
                 ModBlocks.LOOT_FABRICATOR.get(),
                 () -> SimulacraConfig.FABRICATOR_STRESS_IMPACT.get()

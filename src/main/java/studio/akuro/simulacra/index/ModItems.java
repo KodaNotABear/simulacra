@@ -29,25 +29,24 @@ public class ModItems {
     public static final DeferredItem<BlockItem> DATA_CABLE =
             ITEMS.registerSimpleBlockItem("data_cable", ModBlocks.DATA_CABLE);
 
-    // Blank Data Matrix: the empty model you bind to a mob and fill with data by killing it.
     /** One roll of a subject's loot table, in the abstract. Spent at the Loot Fabricator. */
     public static final DeferredItem<PredictionItem> PREDICTION =
             ITEMS.register("prediction", () -> new PredictionItem(new Item.Properties()));
 
     public static final DeferredItem<DataMatrixItem> BLANK_DATA_MATRIX =
             ITEMS.register("blank_data_matrix", () -> new DataMatrixItem(new Item.Properties().stacksTo(1)));
-    // Transitional item for the matrix's Sequenced Assembly line; Create's class adds the progress tooltip.
+    // Transitional item for the matrix's Sequenced Assembly line; Create's class adds the tooltip.
     public static final DeferredItem<SequencedAssemblyItem> INCOMPLETE_DATA_MATRIX =
             ITEMS.register("incomplete_data_matrix", () -> new SequencedAssemblyItem(new Item.Properties()));
-    // Imprint blanks: the substrate a running simulation consumes to print loot onto. Higher grades
-    // yield more loot rolls per job; only pristine can hold a boss-grade imprint.
+    // Substrate a running simulation prints onto. Higher grades yield more loot rolls per job; only
+    // pristine can hold a boss-grade imprint.
     public static final DeferredItem<Item> CRUDE_IMPRINT_BLANK = ITEMS.registerSimpleItem("crude_imprint_blank");
     public static final DeferredItem<Item> REFINED_IMPRINT_BLANK = ITEMS.registerSimpleItem("refined_imprint_blank");
     public static final DeferredItem<Item> PRISTINE_IMPRINT_BLANK = ITEMS.registerSimpleItem("pristine_imprint_blank");
-    // Resonant Catalyst: a chance print from boss simulations; compacts refined blanks into pristine,
-    // making the pristine tier renewable once the boss loop is running.
+    // A chance print from boss simulations; compacts refined blanks into pristine, making that tier
+    // renewable once the boss loop runs.
     public static final DeferredItem<Item> RESONANT_CATALYST = ITEMS.registerSimpleItem("resonant_catalyst");
-    // Corrupted Imprint: what a botched simulation prints instead of loot; crushes back to pulp.
+    // What a botched simulation prints instead of loot; crushes back to pulp.
     public static final DeferredItem<Item> CORRUPTED_IMPRINT = ITEMS.registerSimpleItem("corrupted_imprint");
 
     public static void register(IEventBus eventBus) {
