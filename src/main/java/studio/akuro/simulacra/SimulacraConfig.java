@@ -76,20 +76,30 @@ public final class SimulacraConfig {
         builder.comment("Compute generation: the Cognition Array of Neural Nodes feeding a Mainframe Controller.")
                 .push("compute");
         COMPUTE_PER_RPM = builder
-                .comment("Base compute per tick from one driven Neural Node, per unit of rotation speed (RPM).")
-                .defineInRange("computePerRpm", 0.25, 0.0, 1024.0);
+                .comment("Compute per tick from one driven Neural Node, per unit of rotation speed (RPM).",
+                        "Set so the whole chain lands on whole numbers: a node makes 5 CU/t at 32 RPM, four",
+                        "nodes make the 20 CU/t one Simulation Chamber draws, and that chamber feeds exactly",
+                        "one Loot Fabricator. The rule is four nodes per chamber per fabricator, and it holds",
+                        "exactly at 8, 16, 32 and 64 RPM. Above that the Mechanical Press curve rounds down",
+                        "to whole ticks and the fabricator falls slightly behind the array.")
+                .defineInRange("computePerRpm", 0.15625, 0.0, 1024.0);
         ARRAY_BONUS_PER_NODE = builder
-                .comment("Extra array efficiency per additional driven node. Total = sum(node base) * (1 + min(active-1, max) * this).")
-                .defineInRange("arrayBonusPerNode", 0.05, 0.0, 10.0);
+                .comment("Extra array efficiency per additional driven node. Total = sum(node base) * (1 + min(active-1, max) * this).",
+                        "Off by default. It multiplied the array's total by a different amount at every size,",
+                        "which made whole-number ratios impossible - three nodes came to 0.99 of a chamber and",
+                        "no count ever landed exactly. Packs that would rather have the bonus than the",
+                        "arithmetic can turn it back on.")
+                .defineInRange("arrayBonusPerNode", 0.0, 0.0, 10.0);
         ARRAY_BONUS_MAX_NODES = builder
                 .comment("Node count past which the array bonus stops growing.")
                 .defineInRange("arrayBonusMaxNodes", 20, 1, 4096);
         NODE_IDLE_RPM = builder
                 .comment("Rotation a node spends running itself before it produces anything.",
-                        "This is what stops slow-and-wide from being the only sensible array: width buys the",
-                        "array bonus but every node pays this overhead, so below a certain speed a few fast",
-                        "nodes beat many slow ones. Set to 0 for the old purely linear behaviour.")
-                .defineInRange("nodeIdleRpm", 8.0, 0.0, 256.0);
+                        "Off by default, because subtracting a fixed cost makes output non-proportional to",
+                        "speed: doubling RPM would more than double a node, and the ratios would only hold at",
+                        "one speed instead of all of them. Width is not free regardless - stress scales with",
+                        "nodes times RPM, so eight nodes at 16 RPM cost exactly what four at 32 do.")
+                .defineInRange("nodeIdleRpm", 0.0, 0.0, 256.0);
         NEURAL_NODE_STRESS_IMPACT = builder
                 .comment("Create stress impact of a Neural Node (SU drawn per RPM).")
                 .defineInRange("neuralNodeStressImpact", 8.0, 0.0, 4096.0);
