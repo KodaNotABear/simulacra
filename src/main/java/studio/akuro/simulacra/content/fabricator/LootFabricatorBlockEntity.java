@@ -3,6 +3,8 @@ package studio.akuro.simulacra.content.fabricator;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.logistics.filter.FilterItem;
+import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -50,6 +52,10 @@ import java.util.Optional;
  * Choosing a drop in its screen switches to the priced mode: pay the rarity-derived cost and get that
  * item every time.
  *
+ * <p>The drop can be chosen two ways. A ghost slot in the screen is one, but a ghost slot can only
+ * ever be set by a player standing at the machine, which left no way for a build to decide what a
+ * Fabricator makes. So it also takes a Create filter, and a filter in the slot outranks the screen.
+ *
  * <p>It holds a single stack of work at a time, like Create's processing blocks, so the intended build
  * is a Simulation Chamber feeding it rather than a player topping it up.
  */
@@ -61,6 +67,16 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
 
     private ItemStack target = ItemStack.EMPTY;
     private float progress = 0f;
+
+    /**
+     * Which drop the installed filter picks out of the loaded subject's table.
+     *
+     * <p>Derived, never saved: the filter item is the state, and re-deriving it on load costs one
+     * lookup against an index that is cached anyway. It is still sent to clients, because working it
+     * out needs the loot table and only the server has that.
+     */
+    private ItemStack filterTarget = ItemStack.EMPTY;
+    private boolean filterResolved = false;
 
     /**
      * The Predictions being worked through: one stack, no more, the way Create's processing blocks
@@ -76,6 +92,31 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
 
         @Override
         protected void onContentsChanged(int slot) {
+            // A different subject drops different things, so the filter has to be read against it again.
+            filterResolved = false;
+            setChanged();
+        }
+    };
+
+    /**
+     * A Create filter naming what to make, outranking the screen's selection.
+     *
+     * <p>One filter, never a stack: a second one would be dead weight the machine ignores.
+     */
+    private final ItemStackHandler filter = new ItemStackHandler(1) {
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return stack.getItem() instanceof FilterItem;
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return 1;
+        }
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            filterResolved = false;
             setChanged();
         }
     };
@@ -87,7 +128,8 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         }
     };
 
-    private final FabricatorItemHandler itemHandler = new FabricatorItemHandler(predictions, output);
+    private final FabricatorItemHandler itemHandler =
+            new FabricatorItemHandler(predictions, filter, output);
 
     public LootFabricatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -108,6 +150,10 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
 
     public ItemStackHandler getOutput() {
         return output;
+    }
+
+    public ItemStackHandler getFilter() {
+        return filter;
     }
 
     /** Predictions of this subject the machine currently holds, for the screen's readout. */
@@ -221,8 +267,74 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
     }
 
 
+    /**
+     * What this machine stamps out. An empty stack still means "roll the table", not "make nothing".
+     *
+     * <p>A filter outranks the screen's selection, so a build can retarget a Fabricator no player
+     * will ever open. A filter with nothing set in it is not a decision, so it leaves the machine
+     * rolling exactly as if the slot were empty.
+     */
     public ItemStack getTarget() {
-        return target;
+        ItemStack held = filter.getStackInSlot(0);
+        if (held.isEmpty()) {
+            return target;
+        }
+        return isBlank(held) ? ItemStack.EMPTY : filterTarget;
+    }
+
+    /**
+     * Whether a filter has anything set in it.
+     *
+     * <p>Create writes no components onto a filter until something is put in it, and strips them
+     * again when it is emptied — which is the same test {@code FilterItemStack.of} uses to decide a
+     * filter is worth reading, so a blank one is reliably distinguishable from a configured one.
+     */
+    private static boolean isBlank(ItemStack held) {
+        return held.isComponentsPatchEmpty();
+    }
+
+    /**
+     * A configured filter that matches nothing the loaded subject drops.
+     *
+     * <p>Kept separate from "no target" on purpose: falling back to rolling here would quietly hand
+     * a build items it explicitly asked not to make, which is worse than making none.
+     */
+    private boolean filterUnsatisfied() {
+        ItemStack held = filter.getStackInSlot(0);
+        return !held.isEmpty() && !isBlank(held) && filterTarget.isEmpty();
+    }
+
+    /**
+     * Read the filter against what the loaded subject can drop.
+     *
+     * <p>A Create filter is a predicate rather than a name, so the drop list is tested against it
+     * instead of the filter being asked what it holds. That is also what makes an attribute filter
+     * work here at all, and it costs nothing: the drop list is already derived and cached for the
+     * screen's palette.
+     */
+    private void resolveFilter() {
+        filterResolved = true;
+        ItemStack held = filter.getStackInSlot(0);
+        ItemStack resolved = ItemStack.EMPTY;
+        if (!held.isEmpty() && !isBlank(held)) {
+            // On a copy: reading a filter trims components off the stack it is handed.
+            FilterItemStack predicate = FilterItemStack.of(held.copy());
+            for (ItemStack drop : candidateDrops()) {
+                if (predicate.test(level, drop)) {
+                    resolved = drop.copyWithCount(1);
+                    break;
+                }
+            }
+        }
+        if (ItemStack.matches(filterTarget, resolved)) {
+            return;
+        }
+        filterTarget = resolved;
+        progress = 0f;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     /** Sets what this machine stamps out. Pass an empty stack to clear it. */
@@ -243,6 +355,9 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         }
         if (level.isClientSide) {
             return;
+        }
+        if (!filterResolved) {
+            resolveFilter();
         }
 
         // A usable slot means every precondition for stamping is met at once: a target is set, the
@@ -298,11 +413,14 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
      * whatever the roll gives.
      */
     public boolean isFiltered() {
-        return !target.isEmpty();
+        return !getTarget().isEmpty();
     }
 
     /** First prediction slot this machine can currently spend. */
     private int firstUsablePrediction() {
+        if (filterUnsatisfied()) {
+            return -1;
+        }
         for (int slot = 0; slot < predictions.getSlots(); slot++) {
             ItemStack stack = predictions.getStackInSlot(slot);
             if (stack.isEmpty()) {
@@ -321,7 +439,8 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
 
     /** How many predictions of this subject one target item costs, if that mob drops it at all. */
     public Optional<Integer> priceFor(ItemStack prediction) {
-        if (target.isEmpty() || !(level instanceof ServerLevel server)) {
+        ItemStack goal = getTarget();
+        if (goal.isEmpty() || !(level instanceof ServerLevel server)) {
             return Optional.empty();
         }
         Optional<EntityType<?>> type = PredictionItem.resolveSubject(prediction);
@@ -329,7 +448,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
             return Optional.empty();
         }
         LootTable table = simulationTable(server, type.get());
-        return LootValueIndex.price(server, type.get(), table, target.getItem());
+        return LootValueIndex.price(server, type.get(), table, goal.getItem());
     }
 
     /** Mirrors the chamber's lookup so both machines agree on what a mob drops. */
@@ -352,7 +471,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         if (price.isEmpty() || prediction.getCount() < price.get()) {
             return false;
         }
-        ItemStack produced = target.copyWithCount(1);
+        ItemStack produced = getTarget().copyWithCount(1);
         if (!fitsAll(List.of(produced))) {
             return false;
         }
@@ -444,7 +563,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         if (level == null) {
             return;
         }
-        for (ItemStackHandler handler : List.of(predictions, output)) {
+        for (ItemStackHandler handler : List.of(predictions, filter, output)) {
             for (int slot = 0; slot < handler.getSlots(); slot++) {
                 ItemStack stack = handler.getStackInSlot(slot);
                 if (!stack.isEmpty()) {
@@ -458,10 +577,16 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
         tag.put("Predictions", predictions.serializeNBT(registries));
+        tag.put("Filter", filter.serializeNBT(registries));
         tag.put("Output", output.serializeNBT(registries));
         tag.putFloat("Progress", progress);
         if (!target.isEmpty()) {
             tag.put("Target", target.save(registries));
+        }
+        // Sent, not saved. Working out what a filter picks needs the loot table, which only the
+        // server has, but the screen and the goggles both have to show what is actually being made.
+        if (clientPacket && !filterTarget.isEmpty()) {
+            tag.put("FilterTarget", filterTarget.save(registries));
         }
     }
 
@@ -471,6 +596,9 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         if (tag.contains("Predictions")) {
             predictions.deserializeNBT(registries, tag.getCompound("Predictions"));
         }
+        if (tag.contains("Filter")) {
+            filter.deserializeNBT(registries, tag.getCompound("Filter"));
+        }
         if (tag.contains("Output")) {
             output.deserializeNBT(registries, tag.getCompound("Output"));
         }
@@ -478,19 +606,37 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         target = tag.contains("Target")
                 ? ItemStack.parse(registries, tag.getCompound("Target")).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
+        if (clientPacket) {
+            filterTarget = tag.contains("FilterTarget")
+                    ? ItemStack.parse(registries, tag.getCompound("FilterTarget")).orElse(ItemStack.EMPTY)
+                    : ItemStack.EMPTY;
+        } else {
+            // Loaded from disk: the filter is the state, so read it again rather than trusting a
+            // derived value that a datapack reload could have invalidated.
+            filterResolved = false;
+        }
     }
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("tooltip.simulacra.fabricator").withStyle(ChatFormatting.GRAY)));
-        if (target.isEmpty()) {
+        // A filter that matches nothing is not the same as no choice at all, and looks identical
+        // from outside — the machine simply sits there — so name it.
+        if (filterUnsatisfied()) {
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("tooltip.simulacra.fabricator_filter_no_match")
+                            .withStyle(ChatFormatting.RED)));
+            return true;
+        }
+        ItemStack goal = getTarget();
+        if (goal.isEmpty()) {
             tooltip.add(Component.literal("    ").append(
                     Component.translatable("tooltip.simulacra.fabricator_no_target").withStyle(ChatFormatting.RED)));
             return true;
         }
         tooltip.add(Component.literal("    ").append(
-                Component.translatable("tooltip.simulacra.fabricator_target", target.getHoverName())
+                Component.translatable("tooltip.simulacra.fabricator_target", goal.getHoverName())
                         .withStyle(ChatFormatting.AQUA)));
         int slot = firstUsablePrediction();
         if (slot >= 0) {

@@ -1,7 +1,8 @@
 """Generate the Loot Fabricator's screen background.
 
-The panel carries three groups: the stack of Predictions being worked through, the subject's
-possible drops laid out as a grid to pick from, and the finished items below. Fill colour keeps
+The panel carries four groups: the stack of Predictions being worked through, the Create filter
+that can override the choice, the subject's possible drops laid out as a grid to pick from, and
+the finished items below. Fill colour keeps
 them distinct so the layout reads without on-screen labels. The current choice is marked in the
 grid at runtime rather than mirrored into a slot of its own, following how Hostile Neural Networks
 presents the same decision.
@@ -24,6 +25,7 @@ BRASS = (158, 105, 71)
 BRASS_L = (206, 160, 90)
 # Slot fills, one per role, so the three groups never read as one undifferentiated grid.
 GHOST = (150, 132, 108)
+FILTER = (138, 118, 96)
 INPUT = (126, 124, 108)
 OUTPUT = (112, 104, 90)
 PLAIN = (122, 114, 98)
@@ -64,6 +66,13 @@ def reticle(x, y):
         rect(x + 13 - dx, y + 13 - dy, x + 14 - dx, y + 14 - dy, HINT)
 
 
+def sieve(x, y):
+    """Narrowing bars, reading as a funnel, marking the slot that takes a Create filter."""
+    for i, dy in enumerate((4, 7, 10)):
+        inset = 2 + i * 2
+        rect(x + inset, y + dy, x + 16 - inset, y + dy + 1, HINT)
+
+
 def token(x, y):
     """A small diamond, echoing the Prediction item, marking the input slots."""
     for dy in range(-3, 4):
@@ -78,6 +87,10 @@ rect(4, 4, W - 4, 5, BRASS_L)
 # Preview of the current choice, top left, wearing the machine's corner brackets.
 slot(8, 20, GHOST)
 reticle(8, 20)
+
+# The Create filter that overrides the choice, centred in the gap below the preview.
+slot(8, 44, FILTER)
+sieve(8, 44)
 
 # Predictions in, below it.
 slot(8, 68, INPUT)
