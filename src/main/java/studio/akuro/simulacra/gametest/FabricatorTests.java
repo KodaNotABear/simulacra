@@ -26,6 +26,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import studio.akuro.simulacra.Simulacra;
 import studio.akuro.simulacra.content.fabricator.LootFabricatorBlock;
+import studio.akuro.simulacra.content.data.PredictionItem;
 import studio.akuro.simulacra.content.fabricator.LootFabricatorBlockEntity;
 import studio.akuro.simulacra.index.ModBlocks;
 import studio.akuro.simulacra.index.ModItems;
@@ -330,5 +331,46 @@ public class FabricatorTests {
                 throw new GameTestAssertException("fabricator has not produced rotten flesh yet");
             }
         });
+    }
+
+    /**
+     * An extractor that picks a slot by looking at it must never be able to get stuck on the
+     * Prediction input.
+     *
+     * <p>This is the shape of Create's own ItemHelper.extract: survey every slot with
+     * getStackInSlot, then pull from the first that looks worth pulling. When the input slot
+     * advertised its Prediction but refused extraction, an outbound funnel drained the output
+     * happily until the moment a Prediction arrived, then jammed on that slot for good - which
+     * looked like the machine producing exactly once and never again.
+     */
+    @GameTest(template = PLATFORM, timeoutTicks = 200)
+    public static void anExtractorCannotJamOnThePredictionSlot(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(2, 1, 2);
+        helper.setBlock(pos, ModBlocks.LOOT_FABRICATOR.get());
+        LootFabricatorBlockEntity fabricator =
+                (LootFabricatorBlockEntity) helper.getBlockEntity(pos);
+
+        // A Prediction sitting in the input, and something waiting in the output.
+        ItemStack prediction = new ItemStack(ModItems.PREDICTION.get(), 4);
+        PredictionItem.setSubject(prediction, "minecraft:zombie");
+        fabricator.getPredictions().insertItem(0, prediction, false);
+        fabricator.getOutput().insertItem(0, new ItemStack(Items.ROTTEN_FLESH, 3), false);
+
+        IItemHandler face = fabricator.getItemHandler();
+        // Survey then pull, the way Create does it.
+        ItemStack pulled = ItemStack.EMPTY;
+        for (int slot = 0; slot < face.getSlots(); slot++) {
+            if (face.getStackInSlot(slot).isEmpty()) {
+                continue;
+            }
+            pulled = face.extractItem(slot, 64, false);
+            break;
+        }
+        if (pulled.isEmpty()) {
+            throw new GameTestAssertException(
+                    "an extractor surveying this face found an item it could not pull, which is how "
+                    + "an outbound funnel jams permanently");
+        }
+        helper.succeed();
     }
 }
