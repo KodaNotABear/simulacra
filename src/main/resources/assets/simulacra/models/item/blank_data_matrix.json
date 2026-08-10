@@ -1,0 +1,4 @@
+{
+    "_comment": "builtin/entity hands rendering to DataMatrixRenderer, which lays item/data_matrix_frame flat as a platform and stands the bound mob on it. Deliberately carries no display block: the renderer positions the item by hand for every context, the way Hostile Neural Networks' data model does, and a display transform here would compose with that and pull the platform and the mob apart.",
+    "parent": "builtin/entity"
+}

@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "EME",
+        " C "
+    ],
+    "key": {
+        "E": { "item": "create:electron_tube" },
+        "M": { "item": "create:precision_mechanism" },
+        "C": { "item": "create:brass_casing" }
+    },
+    "result": {
+        "id": "simulacra:mainframe_controller",
+        "count": 1
+    }
+}

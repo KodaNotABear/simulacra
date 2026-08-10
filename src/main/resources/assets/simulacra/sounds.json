@@ -1,0 +1,35 @@
+{
+    "array_ambient": {
+        "subtitle": "subtitles.simulacra.array_ambient",
+        "sounds": [{ "name": "minecraft:block.beacon.ambient", "type": "event" }]
+    },
+    "array_engage": {
+        "subtitle": "subtitles.simulacra.array_engage",
+        "sounds": [{ "name": "create:contraption_assemble", "type": "event" }]
+    },
+    "array_disengage": {
+        "subtitle": "subtitles.simulacra.array_disengage",
+        "sounds": [{ "name": "create:contraption_disassemble", "type": "event" }]
+    },
+
+    "chamber_training": {
+        "subtitle": "subtitles.simulacra.chamber_training",
+        "sounds": [{ "name": "create:mixing", "type": "event" }]
+    },
+    "chamber_stall": {
+        "subtitle": "subtitles.simulacra.chamber_stall",
+        "sounds": [{ "name": "minecraft:block.beacon.deactivate", "type": "event" }]
+    },
+    "chamber_insert": {
+        "subtitle": "subtitles.simulacra.chamber_insert",
+        "sounds": [{ "name": "create:controller_put", "type": "event" }]
+    },
+    "chamber_eject": {
+        "subtitle": "subtitles.simulacra.chamber_eject",
+        "sounds": [{ "name": "create:controller_take", "type": "event" }]
+    },
+    "chamber_substrate": {
+        "subtitle": "subtitles.simulacra.chamber_substrate",
+        "sounds": [{ "name": "create:depot_plop", "type": "event" }]
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "_comment": "The dragon's rewards are hardcoded death logic rather than a loot table. Breath is the renewable part of that; the egg stays a one-off trophy you have to actually kill her for.",
+    "type": "minecraft:entity",
+    "pools": [
+        {
+            "rolls": { "type": "minecraft:uniform", "min": 1, "max": 2 },
+            "entries": [
+                { "type": "minecraft:item", "name": "minecraft:dragon_breath" }
+            ]
+        }
+    ],
+    "random_sequence": "simulacra:simulation/ender_dragon"
+}

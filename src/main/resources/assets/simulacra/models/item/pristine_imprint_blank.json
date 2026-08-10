@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "simulacra:item/pristine_imprint_blank"
+    }
+}

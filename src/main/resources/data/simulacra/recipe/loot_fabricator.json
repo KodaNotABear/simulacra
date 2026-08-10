@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": ["BBB", "EPE", "BSB"],
+    "key": {
+        "B": { "item": "create:brass_sheet" },
+        "E": { "item": "create:electron_tube" },
+        "P": { "item": "create:precision_mechanism" },
+        "S": { "item": "create:shaft" }
+    },
+    "result": { "id": "simulacra:loot_fabricator", "count": 1 }
+}

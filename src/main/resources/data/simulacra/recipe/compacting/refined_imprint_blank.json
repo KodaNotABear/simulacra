@@ -1,0 +1,11 @@
+{
+    "type": "create:compacting",
+    "ingredients": [
+        { "item": "simulacra:crude_imprint_blank" },
+        { "item": "simulacra:crude_imprint_blank" },
+        { "item": "create:polished_rose_quartz" }
+    ],
+    "results": [
+        { "id": "simulacra:refined_imprint_blank", "count": 2 }
+    ]
+}

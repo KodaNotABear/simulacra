@@ -1,0 +1,11 @@
+{
+    "type": "create:compacting",
+    "ingredients": [
+        { "item": "simulacra:refined_imprint_blank" },
+        { "item": "simulacra:refined_imprint_blank" },
+        { "item": "simulacra:resonant_catalyst" }
+    ],
+    "results": [
+        { "id": "simulacra:pristine_imprint_blank", "count": 4 }
+    ]
+}

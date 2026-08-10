@@ -1,0 +1,32 @@
+{
+    "parent": "simulacra:first_prediction",
+    "display": {
+        "icon": {
+            "id": "simulacra:loot_fabricator"
+        },
+        "title": {
+            "translate": "advancement.simulacra.means_of_production.title"
+        },
+        "description": {
+            "translate": "advancement.simulacra.means_of_production.desc"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "simulacra:loot_fabricator"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

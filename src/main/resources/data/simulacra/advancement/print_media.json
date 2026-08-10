@@ -1,0 +1,22 @@
+{
+    "parent": "simulacra:root",
+    "display": {
+        "icon": { "id": "simulacra:crude_imprint_blank" },
+        "title": { "translate": "advancement.simulacra.print_media.title" },
+        "description": { "translate": "advancement.simulacra.print_media.desc" },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_blank": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    { "items": ["simulacra:crude_imprint_blank"] }
+                ]
+            }
+        }
+    }
+}

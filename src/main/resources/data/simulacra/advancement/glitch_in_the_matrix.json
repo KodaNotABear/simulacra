@@ -1,0 +1,22 @@
+{
+    "parent": "simulacra:model_citizen",
+    "display": {
+        "icon": { "id": "simulacra:corrupted_imprint" },
+        "title": { "translate": "advancement.simulacra.glitch_in_the_matrix.title" },
+        "description": { "translate": "advancement.simulacra.glitch_in_the_matrix.desc" },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_corrupted": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    { "items": ["simulacra:corrupted_imprint"] }
+                ]
+            }
+        }
+    }
+}

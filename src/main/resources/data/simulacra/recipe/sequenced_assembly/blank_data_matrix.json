@@ -1,0 +1,42 @@
+{
+    "type": "create:sequenced_assembly",
+    "ingredient": { "item": "create:brass_sheet" },
+    "loops": 2,
+    "results": [
+        { "chance": 120.0, "id": "simulacra:blank_data_matrix" },
+        { "chance": 8.0, "id": "create:polished_rose_quartz" },
+        { "id": "minecraft:quartz" }
+    ],
+    "sequence": [
+        {
+            "type": "create:deploying",
+            "ingredients": [
+                { "item": "simulacra:incomplete_data_matrix" },
+                { "item": "create:polished_rose_quartz" }
+            ],
+            "results": [
+                { "id": "simulacra:incomplete_data_matrix" }
+            ]
+        },
+        {
+            "type": "create:deploying",
+            "ingredients": [
+                { "item": "simulacra:incomplete_data_matrix" },
+                { "item": "create:electron_tube" }
+            ],
+            "results": [
+                { "id": "simulacra:incomplete_data_matrix" }
+            ]
+        },
+        {
+            "type": "create:pressing",
+            "ingredients": [
+                { "item": "simulacra:incomplete_data_matrix" }
+            ],
+            "results": [
+                { "id": "simulacra:incomplete_data_matrix" }
+            ]
+        }
+    ],
+    "transitional_item": { "id": "simulacra:incomplete_data_matrix" }
+}

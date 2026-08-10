@@ -1,0 +1,22 @@
+{
+    "parent": "simulacra:print_media",
+    "display": {
+        "icon": { "id": "simulacra:refined_imprint_blank" },
+        "title": { "translate": "advancement.simulacra.higher_fidelity.title" },
+        "description": { "translate": "advancement.simulacra.higher_fidelity.desc" },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_refined": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    { "items": ["simulacra:refined_imprint_blank"] }
+                ]
+            }
+        }
+    }
+}

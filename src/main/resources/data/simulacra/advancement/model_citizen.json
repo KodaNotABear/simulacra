@@ -1,0 +1,27 @@
+{
+    "parent": "simulacra:fresh_parameters",
+    "display": {
+        "icon": { "id": "simulacra:blank_data_matrix" },
+        "title": { "translate": "advancement.simulacra.model_citizen.title" },
+        "description": { "translate": "advancement.simulacra.model_citizen.desc" },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_trained_matrix": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": ["simulacra:blank_data_matrix"],
+                        "predicates": {
+                            "minecraft:custom_data": "{Trained:1b}"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

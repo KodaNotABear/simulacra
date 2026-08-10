@@ -1,0 +1,10 @@
+{
+    "replace": false,
+    "values": [
+        "simulacra:neural_node",
+        "simulacra:mainframe_controller",
+        "simulacra:simulation_chamber",
+        "simulacra:loot_fabricator",
+        "simulacra:data_cable"
+    ]
+}

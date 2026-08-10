@@ -1,0 +1,12 @@
+{
+    "_comment": "A matrix alone in the grid comes back blank. Binding happens on the first offhand kill, so one stray mob would otherwise permanently ruin a sequenced-assembly item with no way back.",
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        { "item": "simulacra:blank_data_matrix" }
+    ],
+    "result": {
+        "id": "simulacra:blank_data_matrix",
+        "count": 1
+    }
+}

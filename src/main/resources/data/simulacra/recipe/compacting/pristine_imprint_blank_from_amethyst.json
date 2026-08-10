@@ -1,0 +1,12 @@
+{
+    "_comment": "The renewable floor for pristine substrate. Budding amethyst regrows and Create can farm clusters, so the boss tier never dead-ends on ancient city loot.",
+    "type": "create:compacting",
+    "ingredients": [
+        { "item": "simulacra:refined_imprint_blank" },
+        { "item": "simulacra:refined_imprint_blank" },
+        { "item": "minecraft:amethyst_cluster" }
+    ],
+    "results": [
+        { "id": "simulacra:pristine_imprint_blank", "count": 1 }
+    ]
+}

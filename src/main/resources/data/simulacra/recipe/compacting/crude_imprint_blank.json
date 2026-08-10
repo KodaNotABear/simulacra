@@ -1,0 +1,12 @@
+{
+    "_comment": "Compacted rather than hand-crafted: every tier of blank is a basin recipe, so the whole substrate chain runs off one press.",
+    "type": "create:compacting",
+    "ingredients": [
+        { "item": "create:pulp" },
+        { "item": "create:pulp" },
+        { "item": "minecraft:clay_ball" }
+    ],
+    "results": [
+        { "id": "simulacra:crude_imprint_blank", "count": 4 }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "parent": "simulacra:higher_fidelity",
+    "display": {
+        "icon": { "id": "simulacra:pristine_imprint_blank" },
+        "title": { "translate": "advancement.simulacra.pristine_condition.title" },
+        "description": { "translate": "advancement.simulacra.pristine_condition.desc" },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_pristine": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    { "items": ["simulacra:pristine_imprint_blank"] }
+                ]
+            }
+        }
+    }
+}

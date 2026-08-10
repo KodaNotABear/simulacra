@@ -1,0 +1,32 @@
+{
+    "parent": "simulacra:means_of_production",
+    "display": {
+        "icon": {
+            "id": "simulacra:resonant_catalyst"
+        },
+        "title": {
+            "translate": "advancement.simulacra.closed_loop.title"
+        },
+        "description": {
+            "translate": "advancement.simulacra.closed_loop.desc"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_catalyst": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "simulacra:resonant_catalyst"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "ECE",
+        " H "
+    ],
+    "key": {
+        "E": { "item": "create:electron_tube" },
+        "C": { "item": "create:brass_casing" },
+        "H": { "item": "create:shaft" }
+    },
+    "result": {
+        "id": "simulacra:neural_node",
+        "count": 1
+    }
+}

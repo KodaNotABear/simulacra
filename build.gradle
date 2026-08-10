@@ -1,0 +1,132 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+
+version = "${minecraft_version}-${mod_version}"
+group = 'studio.akuro.simulacra'
+
+base {
+    archivesName = 'simulacra'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+println("Java: ${System.getProperty('java.version')}, JVM: ${System.getProperty('java.vm.version')} (${System.getProperty('java.vendor')}), Arch: ${System.getProperty('os.arch')}")
+
+sourceSets.main {
+    resources {
+        srcDir 'src/generated/resources'
+        exclude '.cache/'
+    }
+}
+
+repositories {
+    maven { url = 'https://maven.createmod.net' }        // Create, Ponder, Flywheel
+    maven { url = 'https://maven.ithundxr.dev/snapshots' } // Registrate
+    maven { url = 'https://maven.blamejared.com' }         // JEI
+    mavenCentral()
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+neoForge {
+    version = neo_version
+
+    mods {
+        simulacra {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = project.file("run/${name}")
+        }
+
+        client {
+            client()
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+        }
+
+        // Headless: runs the @GameTest methods and exits non-zero on failure, so it can gate CI.
+        // The ModDev plugin does not declare this one for you.
+        gameTestServer {
+            type = 'gameTestServer'
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').absolutePath,
+                    '--existing', file('src/main/resources/').absolutePath
+        }
+    }
+}
+
+dependencies {
+    // Compile against Create's slim jar; run against the full jar at dev runtime.
+    compileOnly "com.simibubi.create:create-${minecraft_version}:${create_version}:slim"
+    localRuntime("com.simibubi.create:create-${minecraft_version}:${create_version}") {
+        transitive = false
+    }
+
+    compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"
+    compileOnly "dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}"
+    compileOnly "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
+
+    localRuntime "com.tterrag.registrate:Registrate:${registrate_version}"
+    localRuntime("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}") {
+        version {
+            strictly "[${flywheel_version},2.0)"
+            prefer flywheel_version
+        }
+    }
+    localRuntime "dev.engine-room.vanillin:vanillin-neoforge-${minecraft_version}:${vanillin_version}"
+    localRuntime "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
+
+    // Dev-only: JEI in the test client for recipe checks. Not on the compile path, not shipped.
+    // Compiled against JEI's API only. The plugin class is loaded by JEI's own scan, so a
+    // pack without JEI never touches it and no runtime dependency is needed.
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    def replaceProperties = [
+            minecraft_version       : minecraft_version,
+            minecraft_version_range : minecraft_version_range,
+            neo_version             : neo_version,
+            neo_version_range       : neo_version_range,
+            loader_version_range    : loader_version_range,
+            mod_id                  : mod_id,
+            mod_name                : mod_name,
+            mod_license             : mod_license,
+            mod_version             : mod_version,
+            mod_authors             : mod_authors,
+            mod_description         : mod_description,
+            create_version_range    : create_version_range,
+            flywheel_version_range  : flywheel_version_range,
+            ponder_version_range    : ponder_version_range
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

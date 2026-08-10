@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "A A",
+        "ARA",
+        "A A"
+    ],
+    "key": {
+        "A": { "item": "create:andesite_alloy" },
+        "R": { "item": "create:rose_quartz" }
+    },
+    "result": {
+        "id": "simulacra:data_cable",
+        "count": 6
+    }
+}

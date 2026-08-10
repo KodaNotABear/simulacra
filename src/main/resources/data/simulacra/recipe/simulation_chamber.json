@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BGB",
+        "GCG",
+        "BGB"
+    ],
+    "key": {
+        "B": { "item": "create:brass_sheet" },
+        "G": { "item": "minecraft:glass" },
+        "C": { "item": "create:brass_casing" }
+    },
+    "result": {
+        "id": "simulacra:simulation_chamber",
+        "count": 1
+    }
+}

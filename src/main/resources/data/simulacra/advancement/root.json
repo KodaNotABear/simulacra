@@ -1,0 +1,22 @@
+{
+    "display": {
+        "icon": { "id": "simulacra:neural_node" },
+        "title": { "translate": "advancement.simulacra.root.title" },
+        "description": { "translate": "advancement.simulacra.root.desc" },
+        "frame": "task",
+        "background": "simulacra:textures/block/data_cable.png",
+        "show_toast": true,
+        "announce_to_chat": false,
+        "hidden": false
+    },
+    "criteria": {
+        "has_machine": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    { "items": ["simulacra:neural_node", "simulacra:mainframe_controller", "simulacra:simulation_chamber", "simulacra:data_cable"] }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "parent": "simulacra:model_citizen",
+    "display": {
+        "icon": {
+            "id": "simulacra:prediction"
+        },
+        "title": {
+            "translate": "advancement.simulacra.first_prediction.title"
+        },
+        "description": {
+            "translate": "advancement.simulacra.first_prediction.desc"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "simulacra:prediction"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

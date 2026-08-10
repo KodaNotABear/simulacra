@@ -1,0 +1,13 @@
+{
+    "_comment": "The Wither drops its star from dropCustomDeathLoot, not a loot table, so a simulation rolling the vanilla table gets nothing. This is what a simulated Wither prints.",
+    "type": "minecraft:entity",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                { "type": "minecraft:item", "name": "minecraft:nether_star" }
+            ]
+        }
+    ],
+    "random_sequence": "simulacra:simulation/wither"
+}
