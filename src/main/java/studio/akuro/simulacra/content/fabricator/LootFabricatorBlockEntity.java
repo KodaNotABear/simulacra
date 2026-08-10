@@ -170,11 +170,20 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
      * 512 RPM — a plain multiple of RPM, which is what this used to be, keeps accelerating forever and
      * feels foreign next to a press doing the same job.
      */
-    private static int pressTickSpeed(float rpm) {
-        if (rpm == 0f) {
-            return 0;
-        }
-        return (int) Mth.lerp(Mth.clamp(Math.abs(rpm) / 512f, 0f, 1f), 1f, 60f);
+    /**
+     * Work done per tick at a given speed: rotation over eight, and nothing else.
+     *
+     * <p>This deliberately does not follow the Mechanical Press's own curve. That curve is concave and
+     * rounds to whole ticks, which makes throughput a lumpy function of speed — the ratios between an
+     * array, its chambers and this machine came out whole at 32 and 64 RPM and ragged everywhere else.
+     *
+     * <p>Straight proportionality makes the whole chain hold at once: four Neural Nodes drive one
+     * Fabricator at any speed, and the number of Simulation Chambers between them is simply RPM over
+     * 32. A player can work that out in their head at the speed they happen to be running, which is
+     * worth more here than matching a curve nothing else in this mod shares.
+     */
+    private static float workPerTick(float rpm) {
+        return Math.abs(rpm) / 8f;
     }
 
     /**
@@ -247,7 +256,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
             return;
         }
 
-        progress += pressTickSpeed(speed);
+        progress += workPerTick(speed);
         if (progress < SimulacraConfig.FABRICATOR_WORK.get().floatValue()) {
             return;
         }
