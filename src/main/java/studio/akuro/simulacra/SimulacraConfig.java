@@ -188,14 +188,14 @@ public final class SimulacraConfig {
                 .comment("Create stress impact of a Loot Fabricator (SU drawn per RPM).")
                 .defineInRange("fabricatorStressImpact", 8.0, 0.0, 4096.0);
         FABRICATOR_WORK = builder
-                .comment("Work units to stamp one item, spent at the same rate a Mechanical Press",
-                        "spends its own cycle: tickSpeed = lerp(clamp(rpm / 512), 1, 60), so throughput",
-                        "scales with rotation and stops improving past 512 RPM exactly like Create's",
-                        "machines. Create's press uses 240 here; this is deliberately several times",
-                        "longer, because a Fabricator sits at the tail of a line fed by a Simulation",
-                        "Chamber and should not outrun it.",
-                        "At 720: ~9s per item at 32 RPM, ~2.4s at 128 RPM, ~1.2s at 256 RPM.")
-                .defineInRange("fabricatorWork", 720.0, 1.0, 1.0E9);
+                .comment("Work one fabrication takes, against the Mechanical Press speed curve.",
+                        "Chosen so a whole system can be balanced rather than only throttled. A chamber on",
+                        "crude substrate prints one Prediction every 300 ticks (20 CU/t against a 6000 CU",
+                        "job), and at 32 RPM this value makes a Fabricator consume exactly one every 300",
+                        "ticks too - so one chamber feeds one Fabricator with nothing backing up or",
+                        "starving. 64 RPM doubles the Fabricator and wants two chambers; refined and",
+                        "pristine substrate multiply a chamber's output by their roll count.")
+                .defineInRange("fabricatorWork", 1200.0, 1.0, 1.0E9);
         FABRICATOR_PRICE_BASE = builder
                 .comment("Predictions an item costs when the mob drops exactly one per kill.",
                         "Every price is this divided by the drop's measured average yield, so rarer drops",
