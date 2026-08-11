@@ -29,3 +29,13 @@ Thumbs.db
 # Reference art extracted from other mods (Create's assets are All Rights Reserved).
 # These are local working references ONLY and must never be committed or shipped.
 art/reference/
+
+# Texture generators. These draw the mod's art procedurally and are local working tools, not
+# something a player or contributor needs; the art they produce is committed, they are not.
+tools/generate_*.ps1
+tools/update_machine_fronts.ps1
+tools/make_chamber_gui.py
+tools/make_emissive_glow.py
+tools/make_fabricator_front.py
+tools/make_fabricator_gui.py
+tools/make_prediction_item.py
