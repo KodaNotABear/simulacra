@@ -75,14 +75,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(node, Direction.EAST))
-                .text("A Neural Node takes rotational force on its back shaft and turns it into compute");
+                .text("Rotation on the back shaft becomes compute");
         scene.idle(90);
 
         scene.overlay().showText(80)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(shaft))
-                .text("Faster rotation means more compute, and proportionally more stress");
+                .text("Faster rotation, more compute, more stress");
         scene.idle(90);
 
         scene.overlay().showText(90)
@@ -90,7 +90,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.WHITE)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(node))
-                .text("A node on its own still produces nothing. It has to be pooled by a Mainframe Controller.");
+                .text("One node alone makes nothing. A Mainframe Controller pools them.");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -126,14 +126,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.GREEN)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(middle))
-                .text("Nodes conduct, so a rack of touching nodes counts as one array");
+                .text("Touching nodes count as one array");
         scene.idle(90);
 
         scene.overlay().showText(90)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(2, 1, 1)))
-                .text("Every driven node adds its own compute, and larger arrays run more efficiently");
+                .text("Every driven node adds compute. Bigger arrays run more efficiently.");
         scene.idle(100);
 
         scene.overlay().showText(90)
@@ -141,7 +141,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.WHITE)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(middle, Direction.WEST))
-                .text("Cable this rack to a Mainframe Controller and the whole array becomes one pool");
+                .text("Cable the rack to a Mainframe Controller");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -153,7 +153,7 @@ public class SimulacraScenes {
      */
     public static void dataMatrix(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("data_matrix", "Recording a mob with a Data Matrix");
+        scene.title("data_matrix", "Recording a mob");
         scene.configureBasePlate(0, 0, 5);
         scene.showBasePlate();
         scene.idle(10);
@@ -178,7 +178,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.INPUT)
                 .placeNearTarget()
                 .pointAt(standing.add(0, 1.0, 0))
-                .text("Hold a Blank Data Matrix in your off hand and kill mobs with it");
+                .text("Hold a Blank Data Matrix in your off hand and kill mobs");
         scene.idle(100);
 
         scene.world().modifyEntity(zombie, Entity::discard);
@@ -190,14 +190,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.GREEN)
                 .placeNearTarget()
                 .pointAt(standing.add(0, 1.0, 0))
-                .text("The first kill binds the matrix to that mob. From then on only that mob adds data.");
+                .text("The first kill binds it. Only that mob adds data now.");
         scene.idle(100);
 
         scene.overlay().showText(90)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(centre))
-                .text("Once it has recorded enough kills the matrix is ready to be trained in a Simulation Chamber");
+                .text("Enough kills and it is ready to train in a Simulation Chamber");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -209,7 +209,7 @@ public class SimulacraScenes {
      */
     public static void mainframeController(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("mainframe_controller", "Pooling an array with the Mainframe Controller");
+        scene.title("mainframe_controller", "Pooling an array");
         scene.configureBasePlate(0, 0, 7);
         scene.showBasePlate();
         scene.idle(10);
@@ -235,7 +235,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.GREEN)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(4, 2, 1)))
-                .text("Driven nodes each generate compute, and touching nodes form a single array");
+                .text("Driven nodes make compute. Touching nodes form one array.");
         scene.idle(90);
 
         scene.world().showSection(cables, Direction.NORTH);
@@ -248,14 +248,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(controller))
-                .text("The Mainframe Controller claims every node it can reach and pools their output");
+                .text("The controller claims every node it can reach");
         scene.idle(100);
 
         scene.overlay().showText(90)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(controller, Direction.WEST))
-                .text("Wider arrays run more efficiently, so many slow nodes beat one fast node");
+                .text("Many slow nodes beat one fast node");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -301,7 +301,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(controller))
-                .text("Cables join separated racks, so one controller can own an array that is not one solid block");
+                .text("Cables join racks that are not touching");
         scene.idle(90);
 
         scene.world().showSection(bridge, Direction.DOWN);
@@ -314,14 +314,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.OUTPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(2, 2, 6)))
-                .text("They route in any direction, climbing over obstacles to reach a machine");
+                .text("They route any direction, over obstacles");
         scene.idle(100);
 
         scene.overlay().showText(90)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(chamber))
-                .text("Anything cabled to the controller draws from the same pool of compute");
+                .text("Everything cabled in draws from the same pool");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -333,7 +333,7 @@ public class SimulacraScenes {
      */
     public static void simulationChamberTraining(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("simulation_chamber_training", "Training a model in the Simulation Chamber");
+        scene.title("simulation_chamber_training", "Training a model");
         scene.configureBasePlate(0, 0, 9);
         scene.showBasePlate();
         scene.idle(10);
@@ -363,7 +363,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.INPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(chamber))
-                .text("Put a bound Data Matrix into the chamber");
+                .text("Put a bound Data Matrix in the chamber");
         scene.idle(100);
 
         scene.overlay().showText(90)
@@ -371,7 +371,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(chamber, Direction.EAST))
-                .text("Fed with compute, the chamber trains the recording into a working model");
+                .text("Compute trains the recording into a working model");
         scene.idle(100);
 
         scene.effects().indicateSuccess(chamber);
@@ -379,7 +379,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.GREEN)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(chamber))
-                .text("A trained model can then be run over and over to print that mob's drops");
+                .text("Run a trained model to print that mob's drops");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -388,7 +388,7 @@ public class SimulacraScenes {
     /** Running jobs: substrate in, loot out. Shares the training scene's structure. */
     public static void simulationChamberJobs(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("simulation_chamber_jobs", "Printing predictions without the mob");
+        scene.title("simulation_chamber_jobs", "Printing Predictions without the mob");
         scene.configureBasePlate(0, 0, 9);
         scene.showBasePlate();
         scene.idle(10);
@@ -433,7 +433,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.INPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(3, 1, 7)))
-                .text("Every job consumes one Imprint Blank, fed in along the back");
+                .text("Each job eats one Imprint Blank, fed in at the back");
         scene.idle(30);
         scene.world().createItemOnBelt(intakeBelt, Direction.SOUTH,
                 new ItemStack(ModItems.CRUDE_IMPRINT_BLANK.get()));
@@ -456,14 +456,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.OUTPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(1, 1, 5)))
-                .text("Each job prints Predictions of the subject onto the blank, not its drops");
+                .text("Jobs print Predictions, not drops");
         scene.idle(100);
 
         scene.overlay().showText(90)
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(chamber, Direction.NORTH))
-                .text("One Prediction is worth one roll of that mob's loot table. A Loot Fabricator turns them into the drop you pick");
+                .text("One Prediction is one roll of the loot table. A Loot Fabricator cashes it in.");
         scene.idle(100);
 
         scene.markAsFinished();
@@ -532,7 +532,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(fabricator, Direction.WEST))
-                .text("The Loot Fabricator turns Predictions into real drops. Unlike the machines upstream it runs on rotation, not compute");
+                .text("The Loot Fabricator runs on rotation, not compute");
         scene.idle(100);
 
         scene.world().showSection(fabricatorIntake(util), Direction.SOUTH);
@@ -547,7 +547,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.INPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(3, 1, 1)))
-                .text("Feed it Predictions from a Simulation Chamber. A funnel in, a funnel out");
+                .text("Feed it Predictions. A funnel in, a funnel out.");
         scene.idle(40);
         scene.world().flapFunnel(intakeFunnel, false);
         scene.world().modifyBlocks(fabricatorMachine(util),
@@ -575,7 +575,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.OUTPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(3, 1, 5)))
-                .text("Left alone it rolls the subject's loot table: one Prediction per roll, and you keep whatever comes out");
+                .text("Left alone it rolls the loot table, one Prediction per roll");
         scene.idle(110);
 
         scene.markAsFinished();
@@ -608,7 +608,7 @@ public class SimulacraScenes {
                 .colored(PonderPalette.MEDIUM)
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(fabricator, Direction.WEST))
-                .text("Open the Fabricator to see every drop its subject has, and pick one");
+                .text("Open it to see every drop the subject has");
         scene.idle(100);
 
         scene.world().createItemOnBelt(intakeBelt, Direction.NORTH, prediction("minecraft:zombie"));
@@ -630,14 +630,14 @@ public class SimulacraScenes {
                 .colored(PonderPalette.OUTPUT)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(3, 1, 5)))
-                .text("Pick one and it makes only that, one stack of Predictions at a time");
+                .text("Pick one and it makes only that");
         scene.idle(100);
 
         scene.overlay().showText(110)
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(util.grid().at(3, 1, 6)))
-                .text("Rarer drops cost more Predictions, so choosing never beats simply rolling. It only makes the result predictable");
+                .text("Rarer drops cost more Predictions. Choosing only makes it predictable.");
         scene.idle(120);
 
         scene.markAsFinished();
