@@ -4,7 +4,7 @@
         "title": { "translate": "advancement.simulacra.root.title" },
         "description": { "translate": "advancement.simulacra.root.desc" },
         "frame": "task",
-        "background": "simulacra:textures/block/data_cable.png",
+        "background": "minecraft:textures/block/polished_deepslate.png",
         "show_toast": true,
         "announce_to_chat": false,
         "hidden": false
