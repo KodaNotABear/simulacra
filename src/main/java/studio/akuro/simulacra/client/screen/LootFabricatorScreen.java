@@ -4,9 +4,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import studio.akuro.simulacra.Simulacra;
@@ -79,7 +82,6 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         super.renderLabels(graphics, mouseX, mouseY);
-        int held = menu.getHeld();
 
         // Whose drop table this is, right-aligned in the title bar. Without it the palette is items
         // from nowhere in particular; drawn anywhere else on this panel it lands on a slot, and drawn
@@ -90,14 +92,24 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
                 : PredictionItem.getSubject(loaded)
                         .map(DataMatrixItem::mobName)
                         .orElse(Component.translatable("tooltip.simulacra.prediction_unbound"));
-        String text = header.getString();
         // Leave a gap after the machine name. Without it a full-width header is drawn hard against
         // the title and the two read as one run-on string.
-        int available = imageWidth - 16 - font.width(title) - 6;
-        if (font.width(text) > available) {
-            text = font.plainSubstrByWidth(text, available - font.width("...")) + "...";
-        }
+        String text = fit(header.getString(), imageWidth - 16 - font.width(title) - 6);
         graphics.drawString(font, text, imageWidth - 8 - font.width(text), titleLabelY, 0xF0E4CE, false);
+
+        // Which of the two modes the machine is in, said outright. The accent ring below marks the
+        // same thing, but a ring only means something to a player who already knows what it marks,
+        // and the tooltip that explains it has to be hunted for. This sits in the strip of bare panel
+        // beside the inventory label — the only gap wide enough for a line of text — and is
+        // right-aligned under the subject name, so the two facts about the current job share an edge.
+        ItemStack target = menu.getFabricator().getTarget();
+        Component mode = target.isEmpty()
+                ? Component.translatable("gui.simulacra.fabricator_mode_roll")
+                : Component.translatable("gui.simulacra.fabricator_mode_make", target.getHoverName());
+        String modeText = fit(mode.getString(),
+                imageWidth - 8 - inventoryLabelX - font.width(playerInventoryTitle) - 6);
+        graphics.drawString(font, modeText, imageWidth - 8 - font.width(modeText),
+                inventoryLabelY, 0x404040, false);
 
         // An empty preview means "roll the table", not "off". Said in words it overlapped the palette
         // — the gap beside the preview is 24px and the shortest honest phrasing is nearly twice that —
@@ -113,14 +125,13 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
             graphics.fill(88, 73 - filled, 92, 73, ACCENT);
         }
 
-        ItemStack target = menu.getFabricator().getTarget();
         for (int i = 0; i < LootFabricatorMenu.PAGE_SIZE; i++) {
             Slot slot = menu.slots.get(LootFabricatorMenu.FIRST_CANDIDATE + i);
             if (!slot.hasItem()) {
                 continue;
             }
             int price = menu.getCandidatePrice(i);
-            boolean affordable = price > 0 && held >= price;
+            boolean affordable = affordable(i);
             if (!affordable) {
                 graphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, UNAFFORDABLE);
             }
@@ -136,6 +147,59 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
                 graphics.pose().popPose();
             }
         }
+    }
+
+    /** Shortens a line to fit, the way the subject name in the title bar has always been shortened. */
+    private String fit(String text, int available) {
+        return font.width(text) <= available
+                ? text
+                : font.plainSubstrByWidth(text, available - font.width("...")) + "...";
+    }
+
+    /** Whether the drop in the given palette slot can be paid for out of what is loaded. */
+    private boolean affordable(int index) {
+        int price = menu.getCandidatePrice(index);
+        return price > 0 && menu.getHeld() >= price;
+    }
+
+    /**
+     * The palette is ghost slots routed through the menu, not buttons, so nothing in vanilla makes a
+     * noise when one is picked — a screen whose only interactive part is silent reads as broken.
+     *
+     * <p>Sounded here rather than in the menu because this is the click the player made: the menu also
+     * runs server-side, where there is nobody to hear it.
+     */
+    @Override
+    protected void slotClicked(Slot slot, int slotId, int mouseButton, ClickType type) {
+        announce(slotId);
+        super.slotClicked(slot, slotId, mouseButton, type);
+    }
+
+    private void announce(int slotId) {
+        if (minecraft == null || slotId < 0 || slotId >= menu.slots.size()) {
+            return;
+        }
+        if (slotId == LootFabricatorMenu.PREVIEW_SLOT) {
+            // Clicking the preview always ends in the rolling mode, whether it cleared a choice or
+            // confirmed there was none, so it always acknowledges.
+            play(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+            return;
+        }
+        int index = slotId - LootFabricatorMenu.FIRST_CANDIDATE;
+        if (index < 0 || index >= LootFabricatorMenu.PAGE_SIZE || !menu.slots.get(slotId).hasItem()) {
+            return;
+        }
+        // A drop that cannot be paid for is dimmed on screen; say so out loud as well, or clicking one
+        // is indistinguishable from clicking a dead panel.
+        if (affordable(index)) {
+            play(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+        } else {
+            play(SoundEvents.DISPENSER_FAIL, 0.8f);
+        }
+    }
+
+    private void play(net.minecraft.sounds.SoundEvent sound, float pitch) {
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch));
     }
 
     private static void outline(GuiGraphics graphics, int x, int y, int w, int h, int colour) {

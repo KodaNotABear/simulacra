@@ -62,6 +62,22 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
     private ItemStack target = ItemStack.EMPTY;
     private float progress = 0f;
 
+    /** Nothing to price: no drop chosen, or nothing loaded to price it against. */
+    private static final int PRICE_NONE = -1;
+    /** A drop is chosen and a subject is loaded, but that subject genuinely never drops it. */
+    private static final int PRICE_IMPOSSIBLE = 0;
+
+    /**
+     * What the chosen drop currently costs, worked out on the server and sent to the client.
+     *
+     * <p>Pricing needs the loot tables, which only the server has. Goggle tooltips are drawn on the
+     * client, so a tooltip that priced things itself could only ever come back empty and report every
+     * subject as unable to drop anything — which is exactly what it used to do. The value has to
+     * travel instead of being recomputed, the same way the screen gets it through the menu's
+     * {@code ContainerData}.
+     */
+    private int syncedPrice = PRICE_NONE;
+
     /**
      * The Predictions being worked through: one stack, no more, the way Create's processing blocks
      * hold a single stack of work rather than acting as storage. Keeping it to a stack is what makes a
@@ -231,8 +247,37 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         this.progress = 0f;
         setChanged();
         if (level != null && !level.isClientSide) {
+            // Price the new choice before the packet goes out, or the goggle tooltip shows the old
+            // drop's cost until the next tick.
+            syncedPrice = currentPrice();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+    }
+
+    /** The price as it stands right now. Server only: it reads the loot tables. */
+    private int currentPrice() {
+        if (target.isEmpty()) {
+            return PRICE_NONE;
+        }
+        ItemStack loaded = anyPrediction();
+        if (loaded.isEmpty()) {
+            return PRICE_NONE;
+        }
+        return priceFor(loaded).orElse(PRICE_IMPOSSIBLE);
+    }
+
+    /**
+     * Keep the client's copy of the price current. Predictions come and go under automation, so this
+     * cannot only be refreshed when a player changes the selection.
+     */
+    private void syncPrice() {
+        int price = currentPrice();
+        if (price == syncedPrice) {
+            return;
+        }
+        syncedPrice = price;
+        setChanged();
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
     @Override
@@ -252,6 +297,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         float speed = Math.abs(getSpeed());
         int slot = speed <= 0f ? -1 : firstUsablePrediction();
         updateLit(slot >= 0);
+        syncPrice();
         if (slot < 0) {
             return;
         }
@@ -460,6 +506,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         tag.put("Predictions", predictions.serializeNBT(registries));
         tag.put("Output", output.serializeNBT(registries));
         tag.putFloat("Progress", progress);
+        tag.putInt("Price", syncedPrice);
         if (!target.isEmpty()) {
             tag.put("Target", target.save(registries));
         }
@@ -475,6 +522,7 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
             output.deserializeNBT(registries, tag.getCompound("Output"));
         }
         progress = tag.getFloat("Progress");
+        syncedPrice = tag.contains("Price") ? tag.getInt("Price") : PRICE_NONE;
         target = tag.contains("Target")
                 ? ItemStack.parse(registries, tag.getCompound("Target")).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
@@ -492,15 +540,21 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
         tooltip.add(Component.literal("    ").append(
                 Component.translatable("tooltip.simulacra.fabricator_target", target.getHoverName())
                         .withStyle(ChatFormatting.AQUA)));
-        int slot = firstUsablePrediction();
-        if (slot >= 0) {
-            priceFor(predictions.getStackInSlot(slot)).ifPresent(price ->
-                    tooltip.add(Component.literal("    ").append(
-                            Component.translatable("tooltip.simulacra.fabricator_price", price)
-                                    .withStyle(ChatFormatting.GOLD))));
-        } else {
+        // Read the synced price rather than pricing it here: this runs on the client, which has no
+        // loot tables to ask.
+        if (syncedPrice > 0) {
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("tooltip.simulacra.fabricator_price", syncedPrice)
+                            .withStyle(ChatFormatting.GOLD)));
+        } else if (syncedPrice == PRICE_IMPOSSIBLE) {
             tooltip.add(Component.literal("    ").append(
                     Component.translatable("tooltip.simulacra.fabricator_no_match").withStyle(ChatFormatting.RED)));
+        } else {
+            // A drop is chosen but there is nothing loaded to price it against. Saying "never drops
+            // that" here would be the same lie in a different costume.
+            tooltip.add(Component.literal("    ").append(
+                    Component.translatable("tooltip.simulacra.fabricator_no_predictions")
+                            .withStyle(ChatFormatting.RED)));
         }
         return true;
     }

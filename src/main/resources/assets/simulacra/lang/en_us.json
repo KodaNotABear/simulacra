@@ -172,5 +172,8 @@
   "simulacra.ponder.loot_fabricator_choosing.header": "Choosing what to make",
   "simulacra.ponder.loot_fabricator_choosing.text_1": "Open it to see every drop the subject has",
   "simulacra.ponder.loot_fabricator_choosing.text_2": "Pick one and it makes only that",
-  "simulacra.ponder.loot_fabricator_choosing.text_3": "Rarer drops cost more Predictions. Choosing only makes it predictable."
+  "simulacra.ponder.loot_fabricator_choosing.text_3": "Rarer drops cost more Predictions. Choosing only makes it predictable.",
+  "tooltip.simulacra.fabricator_no_predictions": "No Predictions loaded",
+  "gui.simulacra.fabricator_mode_roll": "Rolling the table",
+  "gui.simulacra.fabricator_mode_make": "Making: %s"
 }

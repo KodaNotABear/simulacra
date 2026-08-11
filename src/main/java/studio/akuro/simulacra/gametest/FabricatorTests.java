@@ -4,7 +4,10 @@ import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -331,6 +334,78 @@ public class FabricatorTests {
                 throw new GameTestAssertException("fabricator has not produced rotten flesh yet");
             }
         });
+    }
+
+    /**
+     * The goggle tooltip must report what the machine is really charging.
+     *
+     * <p>Goggle tooltips are drawn on the client, and pricing needs the loot tables, which only the
+     * server has. The tooltip used to price the drop itself, so on the client it came back empty every
+     * single time and the machine announced "this subject never drops that" about drops it was
+     * visibly stamping out. A green build proves nothing here, because on the server — where every
+     * other test runs — the same code works perfectly.
+     *
+     * <p>So this asks the block entity the way a client would: through the sync packet, with no
+     * {@link net.minecraft.server.level.ServerLevel} to fall back on.
+     */
+    @GameTest(template = PLATFORM, timeoutTicks = 200)
+    public static void goggleTooltipPricesTheChosenDropOnTheClient(GameTestHelper helper) {
+        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
+        fabricator.getPredictions().insertItem(0, prediction("minecraft:zombie", 64), false);
+        fabricator.setTarget(new ItemStack(Items.ROTTEN_FLESH));
+
+        int charged = fabricator.priceOf(Items.ROTTEN_FLESH).orElseThrow(() ->
+                new GameTestAssertException("a zombie should be priced for rotten flesh"));
+
+        List<Component> tooltip = new java.util.ArrayList<>();
+        asSeenByAClient(helper, fabricator).addToGoggleTooltip(tooltip, false);
+        List<TranslatableContents> lines = translated(tooltip);
+        List<String> keys = lines.stream().map(TranslatableContents::getKey).toList();
+
+        if (keys.contains("tooltip.simulacra.fabricator_no_match")) {
+            throw new GameTestAssertException("the goggle tooltip claims a zombie never drops rotten "
+                    + "flesh, while the machine is priced to make it at " + charged + "; saw " + keys);
+        }
+        TranslatableContents price = lines.stream()
+                .filter(l -> l.getKey().equals("tooltip.simulacra.fabricator_price"))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException(
+                        "the goggle tooltip never states a price; saw " + keys));
+        Object quoted = price.getArgs().length > 0 ? price.getArgs()[0] : null;
+        if (!Integer.valueOf(charged).equals(quoted)) {
+            throw new GameTestAssertException("the goggle tooltip quotes " + quoted
+                    + " Predictions but the machine charges " + charged);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * The same block entity as a client sees it: filled in from the update packet and then cut off
+     * from the server level, which is the one thing a client copy can never have.
+     */
+    private static LootFabricatorBlockEntity asSeenByAClient(GameTestHelper helper,
+                                                             LootFabricatorBlockEntity source) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        LootFabricatorBlockEntity remote =
+                new LootFabricatorBlockEntity(source.getBlockPos(), source.getBlockState());
+        remote.setLevel(helper.getLevel());
+        remote.handleUpdateTag(source.getUpdateTag(registries), registries);
+        remote.setLevel(null);
+        return remote;
+    }
+
+    /** Every translatable piece of a tooltip, so assertions name keys rather than English. */
+    private static List<TranslatableContents> translated(List<Component> tooltip) {
+        List<TranslatableContents> found = new java.util.ArrayList<>();
+        tooltip.forEach(line -> collectTranslated(line, found));
+        return found;
+    }
+
+    private static void collectTranslated(Component component, List<TranslatableContents> found) {
+        if (component.getContents() instanceof TranslatableContents contents) {
+            found.add(contents);
+        }
+        component.getSiblings().forEach(sibling -> collectTranslated(sibling, found));
     }
 
     /**
