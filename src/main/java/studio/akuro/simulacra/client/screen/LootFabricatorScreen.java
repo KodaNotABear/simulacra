@@ -22,9 +22,7 @@ import studio.akuro.simulacra.content.fabricator.LootFabricatorMenu;
  * items fill a block on the right. Each drop carries its price and anything unaffordable is dimmed, so
  * the decision is made by looking rather than by reading — which is why there is almost no prose here.
  *
- * <p>The arrangement is borrowed; the art is this mod's own. The one addition is a Create filter
- * slot under the preview: the palette is a screen, and a screen needs a player, so without it
- * nothing a build could do would change what the machine makes.
+ * <p>The arrangement is borrowed; the art is this mod's own.
  */
 public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricatorMenu> {
 
@@ -32,7 +30,6 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
             ResourceLocation.fromNamespaceAndPath(Simulacra.MOD_ID, "textures/gui/loot_fabricator.png");
 
     private static final int ACCENT = 0xFF6BA84F;
-    private static final int WARN = 0xFFB4503C;
     private static final int UNAFFORDABLE = 0x60201010;
 
     private Button prev;
@@ -105,11 +102,9 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
         // An empty preview means "roll the table", not "off". Said in words it overlapped the palette
         // — the gap beside the preview is 24px and the shortest honest phrasing is nearly twice that —
         // so the mode is marked the same way a chosen drop is, with the accent ring. Hovering explains.
-        // Unless a filter is deciding and matched nothing, in which case the machine is stopped and
-        // the same green ring would be a lie.
         Slot preview = menu.slots.get(LootFabricatorMenu.PREVIEW_SLOT);
         if (!preview.hasItem()) {
-            outline(graphics, preview.x - 1, preview.y - 1, 18, 18, deciding() ? WARN : ACCENT);
+            outline(graphics, preview.x - 1, preview.y - 1, 18, 18, ACCENT);
         }
 
         // Vertical progress, filling upward, between the palette and the output block.
@@ -118,10 +113,7 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
             graphics.fill(88, 73 - filled, 92, 73, ACCENT);
         }
 
-        // Read from the preview rather than the block entity: with a filter installed the target is
-        // worked out from the loot table, which only the server can read, and the preview is the
-        // server's own answer arriving through ordinary menu syncing.
-        ItemStack target = menu.slots.get(LootFabricatorMenu.PREVIEW_SLOT).getItem();
+        ItemStack target = menu.getFabricator().getTarget();
         for (int i = 0; i < LootFabricatorMenu.PAGE_SIZE; i++) {
             Slot slot = menu.slots.get(LootFabricatorMenu.FIRST_CANDIDATE + i);
             if (!slot.hasItem()) {
@@ -146,17 +138,6 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
         }
     }
 
-    /**
-     * Whether the installed filter is making the decision.
-     *
-     * <p>A filter with nothing set in it is not a decision — the machine goes on rolling — and that
-     * is readable client-side, so the screen never has to ask the server which mode it is in.
-     */
-    private boolean deciding() {
-        ItemStack filter = menu.slots.get(LootFabricatorMenu.FILTER_SLOT).getItem();
-        return !filter.isEmpty() && !filter.isComponentsPatchEmpty();
-    }
-
     private static void outline(GuiGraphics graphics, int x, int y, int w, int h, int colour) {
         graphics.fill(x, y, x + w, y + 1, colour);
         graphics.fill(x, y + h - 1, x + w, y + h, colour);
@@ -166,26 +147,12 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
 
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        // The preview explains the two modes: empty is a roll, filled is a guaranteed item. With a
-        // filter deciding, an empty preview means neither — it means the filter matched nothing.
+        // The preview explains the two modes: empty is a roll, filled is a guaranteed item.
         if (hoveredSlot != null && menu.slots.indexOf(hoveredSlot) == LootFabricatorMenu.PREVIEW_SLOT
                 && !hoveredSlot.hasItem()) {
-            graphics.renderTooltip(font, deciding()
-                    ? java.util.List.of(Component.translatable("gui.simulacra.fabricator_filter_no_match")
-                            .withStyle(ChatFormatting.RED))
-                    : java.util.List.of(
-                            Component.translatable("gui.simulacra.fabricator_any"),
-                            Component.translatable("gui.simulacra.fabricator_any_hint")
-                                    .withStyle(ChatFormatting.GRAY)),
-                    java.util.Optional.empty(), mouseX, mouseY);
-            return;
-        }
-        // An empty filter slot is the only thing on this panel a player cannot work out by looking.
-        if (hoveredSlot != null && menu.slots.indexOf(hoveredSlot) == LootFabricatorMenu.FILTER_SLOT
-                && !hoveredSlot.hasItem()) {
             graphics.renderTooltip(font, java.util.List.of(
-                    Component.translatable("gui.simulacra.fabricator_filter"),
-                    Component.translatable("gui.simulacra.fabricator_filter_hint")
+                    Component.translatable("gui.simulacra.fabricator_any"),
+                    Component.translatable("gui.simulacra.fabricator_any_hint")
                             .withStyle(ChatFormatting.GRAY)
             ), java.util.Optional.empty(), mouseX, mouseY);
             return;

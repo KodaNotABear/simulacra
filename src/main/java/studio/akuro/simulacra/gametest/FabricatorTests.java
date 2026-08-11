@@ -1,12 +1,7 @@
 package studio.akuro.simulacra.gametest;
 
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllDataComponents;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
-import com.simibubi.create.content.logistics.item.filter.attribute.ItemAttribute;
-import com.simibubi.create.content.logistics.item.filter.attribute.attributes.InTagAttribute;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -17,7 +12,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
@@ -52,16 +46,6 @@ public class FabricatorTests {
 
     private static final String PLATFORM = "platform";
     private static final BlockPos POS = new BlockPos(2, 1, 2);
-
-    /**
-     * A Create list filter naming the given items, built the way Create's own filter screen builds
-     * one: the chosen items go into the FILTER_ITEMS component and nothing else is written.
-     */
-    private static ItemStack filter(ItemStack... contents) {
-        ItemStack stack = AllItems.FILTER.asStack();
-        stack.set(AllDataComponents.FILTER_ITEMS, ItemContainerContents.fromItems(List.of(contents)));
-        return stack;
-    }
 
     private static ItemStack prediction(String mobId, int count) {
         ItemStack stack = new ItemStack(ModItems.PREDICTION.get(), count);
@@ -386,215 +370,6 @@ public class FabricatorTests {
             throw new GameTestAssertException(
                     "an extractor surveying this face found an item it could not pull, which is how "
                     + "an outbound funnel jams permanently");
-        }
-        helper.succeed();
-    }
-
-    /**
-     * A filter must decide what comes out, or the machine is only ever configurable by a player
-     * standing at its screen.
-     *
-     * <p>Cow rather than zombie on purpose: a cow always drops beef as well as leather, so a single
-     * scrap of beef in the output is proof the filter was ignored and the table was simply rolled.
-     * Filtered to leather, nothing else may appear.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 700)
-    public static void aFilterDecidesWhatIsMade(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        fabricator.getFilter().insertItem(0, filter(new ItemStack(Items.LEATHER)), false);
-        fabricator.getPredictions().insertItem(0, prediction("minecraft:cow", 64), false);
-
-        // 1200 work at 2 a tick is a 600 tick cycle, so one item is due well before this fires.
-        helper.runAfterDelay(650, () -> {
-            boolean made = false;
-            for (int slot = 0; slot < fabricator.getOutput().getSlots(); slot++) {
-                ItemStack out = fabricator.getOutput().getStackInSlot(slot);
-                if (out.isEmpty()) {
-                    continue;
-                }
-                if (!out.is(Items.LEATHER)) {
-                    throw new GameTestAssertException(
-                            "the filter asked for leather and the machine produced " + out);
-                }
-                made = true;
-            }
-            if (!made) {
-                throw new GameTestAssertException("filtered to leather, the machine produced nothing");
-            }
-            helper.succeed();
-        });
-    }
-
-    /**
-     * An attribute filter must work too.
-     *
-     * <p>This is the case that pins the design down: an attribute filter names no item anywhere, so
-     * the target can only come from testing the subject's drops against the filter rather than from
-     * reading a list out of it. A skeleton drops bones and arrows; only one of them is an arrow.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 200)
-    public static void anAttributeFilterDecidesToo(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        ItemStack attributes = AllItems.ATTRIBUTE_FILTER.asStack();
-        attributes.set(AllDataComponents.ATTRIBUTE_FILTER_MATCHED_ATTRIBUTES,
-                List.of(new ItemAttribute.ItemAttributeEntry(new InTagAttribute(ItemTags.ARROWS), false)));
-        fabricator.getFilter().insertItem(0, attributes, false);
-        fabricator.getPredictions().insertItem(0, prediction("minecraft:skeleton", 64), false);
-
-        helper.runAfterDelay(5, () -> {
-            if (!fabricator.getTarget().is(Items.ARROW)) {
-                throw new GameTestAssertException("an attribute filter matching arrows settled on "
-                        + fabricator.getTarget());
-            }
-            helper.succeed();
-        });
-    }
-
-    /**
-     * A filter with nothing set in it must leave the machine rolling.
-     *
-     * <p>Create's own filters match nothing when blank, which here would read as a machine that
-     * stopped for no stated reason the moment a filter was slotted in. Rolling is the honest
-     * default and is what an empty slot already means.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 200)
-    public static void aBlankFilterStillRollsTheTable(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        fabricator.getFilter().insertItem(0, AllItems.FILTER.asStack(), false);
-        fabricator.getPredictions().insertItem(0, prediction("minecraft:zombie", 64), false);
-        helper.runAfterDelay(20, () -> {
-            if (fabricator.isFiltered()) {
-                throw new GameTestAssertException("a filter with nothing in it reported a chosen drop");
-            }
-            // Lit is the only outward sign the machine is working rather than stalled.
-            helper.assertBlockProperty(POS, LootFabricatorBlock.LIT, true);
-            helper.succeed();
-        });
-    }
-
-    /** A filter outranks the screen, and taking it out hands the decision back rather than jamming. */
-    @GameTest(template = PLATFORM, timeoutTicks = 200)
-    public static void aFilterOverridesTheScreenSelection(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        fabricator.getPredictions().insertItem(0, prediction("minecraft:cow", 16), false);
-        fabricator.setTarget(new ItemStack(Items.BEEF));
-        fabricator.getFilter().insertItem(0, filter(new ItemStack(Items.LEATHER)), false);
-
-        helper.runAfterDelay(5, () -> {
-            if (!fabricator.getTarget().is(Items.LEATHER)) {
-                throw new GameTestAssertException("the screen's beef outranked the filter's leather; making "
-                        + fabricator.getTarget());
-            }
-            fabricator.getFilter().extractItem(0, 1, false);
-            if (!fabricator.getTarget().is(Items.BEEF)) {
-                throw new GameTestAssertException("removing the filter did not restore the screen's choice; "
-                        + "making " + fabricator.getTarget());
-            }
-            helper.succeed();
-        });
-    }
-
-    /**
-     * A filter naming something the subject never drops stops the machine rather than falling back
-     * to rolling. Quietly making the wrong thing is worse than making none, and a build that asked
-     * for diamonds has no use for rotten flesh.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 200)
-    public static void anUnmatchableFilterStaysDark(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        fabricator.getFilter().insertItem(0, filter(new ItemStack(Items.DIAMOND)), false);
-        fabricator.getPredictions().insertItem(0, prediction("minecraft:zombie", 64), false);
-        helper.runAfterDelay(20, () -> {
-            helper.assertBlockProperty(POS, LootFabricatorBlock.LIT, false);
-            if (!fabricator.getOutput().getStackInSlot(0).isEmpty()) {
-                throw new GameTestAssertException("an unmatchable filter fell back to rolling the table");
-            }
-            helper.succeed();
-        });
-    }
-
-    /**
-     * The filter has to be settable through the block's item face, or it is only a second screen
-     * control and no build is any better off. It must not be extractable through the same face,
-     * though, or an outbound funnel walks off with the machine's own settings.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 200)
-    public static void aFilterCanBeSetThroughTheItemFace(GameTestHelper helper) {
-        LootFabricatorBlockEntity fabricator = drivenFabricator(helper);
-        IItemHandler face = helper.getLevel()
-                .getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(POS), null);
-        if (face == null) {
-            throw new GameTestAssertException("no item capability on the Loot Fabricator");
-        }
-
-        ItemStack leftover = ItemHandlerHelper.insertItem(face, filter(new ItemStack(Items.LEATHER)), false);
-        if (!leftover.isEmpty()) {
-            throw new GameTestAssertException("the item face refused a filter, so no build can retarget this machine");
-        }
-        if (fabricator.getFilter().getStackInSlot(0).isEmpty()) {
-            throw new GameTestAssertException("a filter inserted through the face never reached the slot");
-        }
-
-        for (int slot = 0; slot < face.getSlots(); slot++) {
-            ItemStack pulled = face.extractItem(slot, 64, false);
-            if (!pulled.isEmpty()) {
-                throw new GameTestAssertException("the face let the machine's own filter be pulled back out as "
-                        + pulled);
-            }
-        }
-        helper.succeed();
-    }
-
-    /**
-     * A build must be able to swap the filter, not only install one.
-     *
-     * <p>The top face gives it back; every other face will not, so an outbound funnel on the side
-     * cannot walk off with the machine's own settings.
-     */
-    @GameTest(template = PLATFORM, timeoutTicks = 100)
-    public static void onlyTheTopFaceReturnsTheFilter(GameTestHelper helper) {
-        BlockPos pos = new BlockPos(2, 1, 2);
-        helper.setBlock(pos, ModBlocks.LOOT_FABRICATOR.get());
-        LootFabricatorBlockEntity fabricator =
-                (LootFabricatorBlockEntity) helper.getBlockEntity(pos);
-
-        IItemHandler top = fabricator.getItemHandler(Direction.UP);
-        IItemHandler flank = fabricator.getItemHandler(Direction.NORTH);
-
-        ItemStack leftover = ItemStack.EMPTY;
-        for (int slot = 0; slot < top.getSlots(); slot++) {
-            leftover = top.insertItem(slot, AllItems.FILTER.asStack(), true);
-            if (leftover.isEmpty()) {
-                top.insertItem(slot, AllItems.FILTER.asStack(), false);
-                break;
-            }
-        }
-        if (!leftover.isEmpty()) {
-            throw new GameTestAssertException("no face would accept a filter");
-        }
-
-        boolean sideCanSee = false;
-        boolean sideCanTake = false;
-        boolean topCanTake = false;
-        for (int slot = 0; slot < flank.getSlots(); slot++) {
-            if (flank.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
-                sideCanSee = true;
-            }
-            if (!flank.extractItem(slot, 1, true).isEmpty()
-                    && flank.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
-                sideCanTake = true;
-            }
-            if (!top.extractItem(slot, 1, true).isEmpty()
-                    && top.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
-                topCanTake = true;
-            }
-        }
-        if (sideCanSee || sideCanTake) {
-            throw new GameTestAssertException("a side face can reach the filter; a funnel could steal it");
-        }
-        if (!topCanTake) {
-            throw new GameTestAssertException(
-                    "the top face will not give the filter back, so no build can ever swap it");
         }
         helper.succeed();
     }

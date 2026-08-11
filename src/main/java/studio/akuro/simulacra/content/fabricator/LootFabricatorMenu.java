@@ -1,6 +1,5 @@
 package studio.akuro.simulacra.content.fabricator;
 
-import com.simibubi.create.content.logistics.filter.FilterItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -31,21 +30,15 @@ import java.util.List;
  * <p>The palette is nine ghost slots showing one page at a time rather than every drop at once. Ghost
  * slots ride the vanilla menu's own item syncing, so the server hands the client a live list without a
  * custom packet, and paging is a menu button — also vanilla plumbing.
- *
- * <p>Below the preview sits a Create filter slot, which this screen does not share with Hostile
- * Neural Networks. Their palette can only ever be worked by a player standing at the machine; a
- * filter is an item, so a build can set one.
  */
 public class LootFabricatorMenu extends AbstractContainerMenu {
 
     /** Ghost slot previewing the current choice. Clicking it clears the selection. */
     public static final int PREVIEW_SLOT = 0;
-    /** The Create filter, which outranks anything picked from the palette. */
-    public static final int FILTER_SLOT = 1;
     /** The single Prediction input. */
-    public static final int INPUT_SLOT = 2;
+    public static final int INPUT_SLOT = 1;
     /** First of the nine palette ghosts. */
-    public static final int FIRST_CANDIDATE = 3;
+    public static final int FIRST_CANDIDATE = 2;
     /** How many drops one page of the palette shows. */
     public static final int PAGE_SIZE = 9;
 
@@ -72,15 +65,6 @@ public class LootFabricatorMenu extends AbstractContainerMenu {
         this.fabricator = fabricator;
 
         addSlot(ghost(previewDisplay, 0, 8, 20));
-
-        // A real slot, not a ghost: the filter item itself is the setting, so it has to be an item
-        // the machine holds rather than a copy of one.
-        addSlot(new SlotItemHandler(fabricator.getFilter(), 0, 8, 44) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return stack.getItem() instanceof FilterItem;
-            }
-        });
 
         addSlot(new SlotItemHandler(fabricator.getPredictions(), 0, 8, 68) {
             @Override
@@ -260,10 +244,6 @@ public class LootFabricatorMenu extends AbstractContainerMenu {
             }
         } else if (stack.getItem() instanceof PredictionItem) {
             if (!moveItemStackTo(stack, INPUT_SLOT, INPUT_SLOT + 1, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (stack.getItem() instanceof FilterItem) {
-            if (!moveItemStackTo(stack, FILTER_SLOT, FILTER_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
         } else {
