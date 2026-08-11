@@ -544,4 +544,58 @@ public class FabricatorTests {
         }
         helper.succeed();
     }
+
+    /**
+     * A build must be able to swap the filter, not only install one.
+     *
+     * <p>The top face gives it back; every other face will not, so an outbound funnel on the side
+     * cannot walk off with the machine's own settings.
+     */
+    @GameTest(template = PLATFORM, timeoutTicks = 100)
+    public static void onlyTheTopFaceReturnsTheFilter(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(2, 1, 2);
+        helper.setBlock(pos, ModBlocks.LOOT_FABRICATOR.get());
+        LootFabricatorBlockEntity fabricator =
+                (LootFabricatorBlockEntity) helper.getBlockEntity(pos);
+
+        IItemHandler top = fabricator.getItemHandler(Direction.UP);
+        IItemHandler flank = fabricator.getItemHandler(Direction.NORTH);
+
+        ItemStack leftover = ItemStack.EMPTY;
+        for (int slot = 0; slot < top.getSlots(); slot++) {
+            leftover = top.insertItem(slot, AllItems.FILTER.asStack(), true);
+            if (leftover.isEmpty()) {
+                top.insertItem(slot, AllItems.FILTER.asStack(), false);
+                break;
+            }
+        }
+        if (!leftover.isEmpty()) {
+            throw new GameTestAssertException("no face would accept a filter");
+        }
+
+        boolean sideCanSee = false;
+        boolean sideCanTake = false;
+        boolean topCanTake = false;
+        for (int slot = 0; slot < flank.getSlots(); slot++) {
+            if (flank.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
+                sideCanSee = true;
+            }
+            if (!flank.extractItem(slot, 1, true).isEmpty()
+                    && flank.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
+                sideCanTake = true;
+            }
+            if (!top.extractItem(slot, 1, true).isEmpty()
+                    && top.getStackInSlot(slot).getItem() == AllItems.FILTER.asStack().getItem()) {
+                topCanTake = true;
+            }
+        }
+        if (sideCanSee || sideCanTake) {
+            throw new GameTestAssertException("a side face can reach the filter; a funnel could steal it");
+        }
+        if (!topCanTake) {
+            throw new GameTestAssertException(
+                    "the top face will not give the filter back, so no build can ever swap it");
+        }
+        helper.succeed();
+    }
 }

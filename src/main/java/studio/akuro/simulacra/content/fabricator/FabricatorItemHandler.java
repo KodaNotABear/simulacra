@@ -8,20 +8,27 @@ import net.neoforged.neoforge.items.IItemHandler;
  * the reverse. Same shape as the chamber's handler, so funnels behave consistently across both
  * machines.
  *
- * <p>The filter slot rides along on the inbound half. Letting a build push a filter in is the whole
- * point of the slot — a target that only a player at the screen can set is not automation — but it
- * is deliberately not extractable, or an outbound funnel would steal the machine's own settings.
+ * <p>The filter slot rides along on the inbound half, and how much of it shows depends on the face.
+ * From the top it is visible and extractable, so a build can swap the machine's target; from every
+ * other face it is hidden and insert-only, so an outbound funnel cannot steal the settings.
+ *
+ * <p>Visible and extractable move together on purpose. A slot that shows an item but refuses to give
+ * it up is the permanent jam this class already guards against elsewhere.
  */
 public class FabricatorItemHandler implements IItemHandler {
 
     private final IItemHandler input;
     private final IItemHandler filter;
     private final IItemHandler output;
+    /** Whether this view lets the filter be seen and taken back out. */
+    private final boolean filterExposed;
 
-    public FabricatorItemHandler(IItemHandler input, IItemHandler filter, IItemHandler output) {
+    public FabricatorItemHandler(IItemHandler input, IItemHandler filter, IItemHandler output,
+                                 boolean filterExposed) {
         this.input = input;
         this.filter = filter;
         this.output = output;
+        this.filterExposed = filterExposed;
     }
 
     private boolean isInput(int slot) {
@@ -58,8 +65,13 @@ public class FabricatorItemHandler implements IItemHandler {
      */
     @Override
     public ItemStack getStackInSlot(int slot) {
-        return isInput(slot) || isFilter(slot)
-                ? ItemStack.EMPTY : output.getStackInSlot(outputSlot(slot));
+        if (isInput(slot)) {
+            return ItemStack.EMPTY;
+        }
+        if (isFilter(slot)) {
+            return filterExposed ? filter.getStackInSlot(filterSlot(slot)) : ItemStack.EMPTY;
+        }
+        return output.getStackInSlot(outputSlot(slot));
     }
 
     @Override
@@ -72,8 +84,13 @@ public class FabricatorItemHandler implements IItemHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        return isInput(slot) || isFilter(slot)
-                ? ItemStack.EMPTY : output.extractItem(outputSlot(slot), amount, simulate);
+        if (isInput(slot)) {
+            return ItemStack.EMPTY;
+        }
+        if (isFilter(slot)) {
+            return filterExposed ? filter.extractItem(filterSlot(slot), amount, simulate) : ItemStack.EMPTY;
+        }
+        return output.extractItem(outputSlot(slot), amount, simulate);
     }
 
     @Override

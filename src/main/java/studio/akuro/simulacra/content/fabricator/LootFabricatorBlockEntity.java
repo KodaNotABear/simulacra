@@ -129,7 +129,16 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
     };
 
     private final FabricatorItemHandler itemHandler =
-            new FabricatorItemHandler(predictions, filter, output);
+            new FabricatorItemHandler(predictions, filter, output, false);
+    /**
+     * The top face, which is the only one that will give the filter back.
+     *
+     * <p>A build that can put a filter in but never take it out can set the machine's target once and
+     * then never change its mind, which is configuration rather than automation. Keeping that to one
+     * face means an outbound funnel on the side still cannot reach the settings.
+     */
+    private final FabricatorItemHandler filterFace =
+            new FabricatorItemHandler(predictions, filter, output, true);
 
     public LootFabricatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -137,6 +146,11 @@ public class LootFabricatorBlockEntity extends KineticBlockEntity
 
     public LootFabricatorBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlockEntities.LOOT_FABRICATOR.get(), pos, state);
+    }
+
+    /** The face shown to a given side; only the top exposes the filter. */
+    public IItemHandler getItemHandler(net.minecraft.core.Direction side) {
+        return side == net.minecraft.core.Direction.UP ? filterFace : itemHandler;
     }
 
     public IItemHandler getItemHandler() {

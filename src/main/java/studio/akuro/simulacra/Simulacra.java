@@ -59,7 +59,7 @@ public class Simulacra {
         event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK,
                 ModBlockEntities.LOOT_FABRICATOR.get(),
-                (fabricator, side) -> fabricator.getItemHandler());
+                (fabricator, side) -> fabricator.getItemHandler(side));
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
