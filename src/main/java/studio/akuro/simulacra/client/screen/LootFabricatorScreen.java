@@ -53,6 +53,9 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
                 .bounds(leftPos + 30, topPos + 76, 20, 16).build());
         next = addRenderableWidget(Button.builder(Component.literal(">"), b -> page(LootFabricatorMenu.BUTTON_NEXT))
                 .bounds(leftPos + 64, topPos + 76, 20, 16).build());
+        // Buttons default to visible, and containerTick does not run until the tick after the screen
+        // opens, so without this the arrows flash on every open before hiding themselves.
+        refreshPaging();
     }
 
     private void page(int button) {
@@ -64,6 +67,11 @@ public class LootFabricatorScreen extends AbstractContainerScreen<LootFabricator
     @Override
     protected void containerTick() {
         super.containerTick();
+        refreshPaging();
+    }
+
+    /** Paging only exists when a subject drops more than one page's worth, which most do not. */
+    private void refreshPaging() {
         boolean paged = menu.getPages() > 1;
         prev.visible = paged;
         next.visible = paged;
