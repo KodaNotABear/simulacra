@@ -15,8 +15,8 @@ Every machine runs on **rotational force**. No electricity, no other tech mod.
 A few more give it enough data to train.
 
 **2. Think.** Build a **Cognition Array**: a rack of **Neural Nodes** on a shaft, pooled by a
-**Mainframe Controller**. Nodes turn RPM into Cognition Units. Bigger arrays run more efficiently.
-**Data Cables** reach machines that aren't next door.
+**Mainframe Controller**. Nodes turn RPM into Cognition Units, four nodes per Simulation Chamber at
+any speed. **Data Cables** reach machines that aren't next door.
 
 **3. Train.** A **Simulation Chamber** spends compute turning raw data into a model. Models keep
 learning through use, Coarse to Self-Aware. Better grades print faster and botch less.
@@ -26,15 +26,15 @@ more per job. Only Pristine can hold a boss.
 
 **5. Fabricate.** A **Loot Fabricator** spends Predictions on drops, and runs on rotation instead of
 compute. Leave it alone and it rolls the mob's real loot table, one Prediction per roll. Pick a drop
-and it makes only that, priced by how rarely the mob drops it. Choosing costs more than rolling. It
-just makes the result predictable.
+and it makes only that, priced by how rarely the mob drops it. Choosing costs more than rolling; it
+only makes the result predictable.
 
 ---
 
 ## Built for Create, not ported to it
 
-- **Rotation all the way down.** Neural Nodes take a shaft. The Fabricator follows the Mechanical
-  Press's speed curve. Stress scales like Create's own machines.
+- **Rotation all the way down.** Neural Nodes take a shaft. Fabricator speed is proportional to RPM,
+  so a line sizes on paper. Stress scales like Create's own machines.
 - **Display Link support.** Read subject, grade, progress and substrate off a Display Board.
 - **Engineer's Goggles** report every machine's state. Comparators read the buffers.
 - **Ponder scenes** for all five blocks.

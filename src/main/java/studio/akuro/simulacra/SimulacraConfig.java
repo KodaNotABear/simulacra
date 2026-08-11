@@ -78,9 +78,8 @@ public final class SimulacraConfig {
                 .comment("Compute per tick from one driven Neural Node, per unit of rotation speed (RPM).",
                         "Set so the whole chain lands on whole numbers: a node makes 5 CU/t at 32 RPM, four",
                         "nodes make the 20 CU/t one Simulation Chamber draws, and that chamber feeds exactly",
-                        "one Loot Fabricator. The rule is four nodes per chamber per fabricator, and it holds",
-                        "exactly at 8, 16, 32 and 64 RPM. Above that the Mechanical Press curve rounds down",
-                        "to whole ticks and the fabricator falls slightly behind the array.")
+                        "one Loot Fabricator. Four nodes drive one Fabricator at any speed; the chambers",
+                        "between them are RPM over 32.")
                 .defineInRange("computePerRpm", 0.15625, 0.0, 1024.0);
         ARRAY_BONUS_PER_NODE = builder
                 .comment("Extra array efficiency per additional driven node. Total = sum(node base) * (1 + min(active-1, max) * this).",
