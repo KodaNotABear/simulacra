@@ -18,11 +18,26 @@ public class ModDisplaySources {
     public static final DeferredRegister<DisplaySource> SOURCES =
             DeferredRegister.create(CreateRegistries.DISPLAY_SOURCE, Simulacra.MOD_ID);
 
-    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Chamber> SIMULATION_CHAMBER =
-            SOURCES.register("simulation_chamber", SimulacraDisplaySources.Chamber::new);
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Subject> SUBJECT =
+            SOURCES.register("subject", SimulacraDisplaySources.Subject::new);
 
-    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Fabricator> LOOT_FABRICATOR =
-            SOURCES.register("loot_fabricator", SimulacraDisplaySources.Fabricator::new);
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Grade> GRADE =
+            SOURCES.register("grade", SimulacraDisplaySources.Grade::new);
+
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Data> DATA =
+            SOURCES.register("data", SimulacraDisplaySources.Data::new);
+
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Substrate> SUBSTRATE =
+            SOURCES.register("substrate", SimulacraDisplaySources.Substrate::new);
+
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Status> STATUS =
+            SOURCES.register("status", SimulacraDisplaySources.Status::new);
+
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Target> TARGET =
+            SOURCES.register("target", SimulacraDisplaySources.Target::new);
+
+    public static final DeferredHolder<DisplaySource, SimulacraDisplaySources.Rate> RATE =
+            SOURCES.register("rate", SimulacraDisplaySources.Rate::new);
 
     public static void register(IEventBus eventBus) {
         SOURCES.register(eventBus);
@@ -30,7 +45,11 @@ public class ModDisplaySources {
 
     /** Called once blocks and sources both exist; see {@link Simulacra}'s common setup. */
     public static void attachToBlocks() {
-        DisplaySource.BY_BLOCK.add(ModBlocks.SIMULATION_CHAMBER.get(), SIMULATION_CHAMBER.get());
-        DisplaySource.BY_BLOCK.add(ModBlocks.LOOT_FABRICATOR.get(), LOOT_FABRICATOR.get());
+        for (DeferredHolder<DisplaySource, ?> chamber : java.util.List.of(SUBJECT, GRADE, DATA, SUBSTRATE, STATUS)) {
+            DisplaySource.BY_BLOCK.add(ModBlocks.SIMULATION_CHAMBER.get(), chamber.get());
+        }
+        for (DeferredHolder<DisplaySource, ?> fabricator : java.util.List.of(TARGET, RATE)) {
+            DisplaySource.BY_BLOCK.add(ModBlocks.LOOT_FABRICATOR.get(), fabricator.get());
+        }
     }
 }

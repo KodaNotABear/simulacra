@@ -129,8 +129,6 @@
   "jei.simulacra.corrupted_imprint": "A failed print. Low-grade models botch some jobs. Crush one to recover material.",
   "jei.simulacra.resonant_catalyst": "Sometimes left behind by a boss simulation. The renewable route to Pristine Imprint Blanks.",
   "gui.simulacra.chamber.accuracy": "%s%% accurate",
-  "simulacra.display_source.simulation_chamber": "Simulation Status",
-  "simulacra.display_source.loot_fabricator": "Fabrication Status",
   "gui.simulacra.chamber.redstone.tooltip": "Whether redstone stops this chamber",
   "gui.simulacra.chamber.redstone.ignored": "Redstone: ignored",
   "gui.simulacra.chamber.redstone.ignored.short": "Any",
@@ -176,5 +174,12 @@
   "tooltip.simulacra.fabricator_no_predictions": "No Predictions loaded",
   "gui.simulacra.fabricator_mode_roll": "Rolling the table",
   "gui.simulacra.fabricator_mode_make": "Making: %s",
-  "simulacra.display.rate": "%s/min"
+  "simulacra.display.rate": "%s/min",
+  "simulacra.display_source.subject": "Subject",
+  "simulacra.display_source.grade": "Model Grade",
+  "simulacra.display_source.data": "Data Collected",
+  "simulacra.display_source.substrate": "Substrate Loaded",
+  "simulacra.display_source.status": "Machine Status",
+  "simulacra.display_source.target": "Fabricator Target",
+  "simulacra.display_source.rate": "Output Rate"
 }
