@@ -40,7 +40,15 @@ public class SimulacraDisplaySources {
                         .orElse(Component.translatable("gui.simulacra.chamber.unbound")));
                 int tier = DataMatrixItem.getModelTier(model);
                 lines.add(DataMatrixItem.tierName(tier).copy());
-                lines.add(Component.literal(Math.round(chamber.getProgressPercent()) + "%"));
+                // Not the job percentage. That is a sawtooth which resets every job, and a Display Link
+                // samples on its own schedule, so an unrelated period lands on arbitrary points of the
+                // ramp and the board reads as noise. Data toward the next grade only ever climbs.
+                int next = DataMatrixItem.nextTierThreshold(model);
+                lines.add(next > 0
+                        ? Component.translatable("gui.simulacra.chamber.data",
+                                DataMatrixItem.getData(model), next)
+                        : Component.translatable("gui.simulacra.chamber.data_max",
+                                DataMatrixItem.getData(model)));
                 SubstrateTier substrate = chamber.currentTier();
                 lines.add(substrate == null
                         ? Component.translatable("gui.simulacra.chamber.substrate_none")
@@ -69,7 +77,12 @@ public class SimulacraDisplaySources {
             lines.add(target.isEmpty()
                     ? Component.translatable("gui.simulacra.fabricator_any")
                     : target.getHoverName().copy());
-            lines.add(Component.literal(Math.round(fabricator.getProgressFraction() * 100f) + "%"));
+            // A rate rather than a percentage, for the same reason: progress resets every item, so a
+            // board sampling it shows arbitrary numbers. Output is exactly proportional to speed -
+            // one item per 9600/RPM ticks, so RPM/8 items a minute - which is steady and is the
+            // figure a player actually wants off a board.
+            lines.add(Component.translatable("simulacra.display.rate",
+                    String.format("%.1f", Math.abs(fabricator.getSpeed()) / 8f)));
             return trim(lines, stats);
         }
 

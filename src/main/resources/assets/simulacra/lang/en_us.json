@@ -175,5 +175,6 @@
   "simulacra.ponder.loot_fabricator_choosing.text_3": "Rarer drops cost more Predictions. Choosing only makes it predictable.",
   "tooltip.simulacra.fabricator_no_predictions": "No Predictions loaded",
   "gui.simulacra.fabricator_mode_roll": "Rolling the table",
-  "gui.simulacra.fabricator_mode_make": "Making: %s"
+  "gui.simulacra.fabricator_mode_make": "Making: %s",
+  "simulacra.display.rate": "%s/min"
 }
